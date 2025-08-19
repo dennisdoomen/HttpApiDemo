@@ -1,0 +1,136 @@
+using Asp.Versioning;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
+
+namespace HttpApiDemo;
+
+internal static class SwaggerGenerationExtensions
+{
+    internal static void AddFluxSwaggerGen(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddApiVersioning(options =>
+            {
+                options.ReportApiVersions = true;
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+            })
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.FormatGroupName = (group, version) => $"{group}-{version}";
+                options.SubstitutionFormat = "V";
+                options.SubstituteApiVersionInUrl = true;
+            });
+
+        builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, SwaggerByApiVersionSplitter>();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            // Add a custom operation filter which sets default values
+            options.OperationFilter<ApplySwashbuckleWorkaroundsFilter>();
+            options.OperationFilter<RemoveParametersExtractFromAuthorizationHeader>();
+
+            var fileName = typeof(Program).Assembly.GetName().Name + ".xml";
+            var filePath = Path.Combine(AppContext.BaseDirectory, fileName);
+
+            // Integrate xml comments
+            options.IncludeXmlComments(filePath);
+
+            AddSecurityDefinitions(options);
+            AddSecurityRequirements(options);
+        });
+    }
+
+    internal static void UseFluxSwaggerUi(this WebApplication app)
+    {
+        app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
+
+        app.UseSwaggerUI(options =>
+        {
+            var descriptions = app.DescribeApiVersions();
+            var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
+
+            // build a swagger endpoint for each discovered API version
+            foreach (var description in sortedDescriptions)
+            {
+                var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
+                var name = description.GroupName;
+                options.SwaggerEndpoint(url, name);
+                options.RoutePrefix = "api-docs";
+                options.DocumentTitle = "Greenchoice zakelijk API's";
+            }
+        });
+    }
+
+    private static void AddSecurityDefinitions(SwaggerGenOptions options)
+    {
+        // Add an Authorize button to enable bearer token authentication
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer"
+        });
+
+        // Add an Authorize button to enable basic authentication
+        options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+        {
+            Description = "Basic Authentication using the HTTP Basic scheme. Provide a Base64-encoded 'username:password' " +
+                          "in the Authorization header. Example: \"Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "basic",
+        });
+    }
+
+    private static void AddSecurityRequirements(SwaggerGenOptions options)
+    {
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Basic" }
+                },
+                []
+            },
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                },
+                []
+            }
+        });
+    }
+
+    /// <summary>
+    /// Removes parameters with the [FromAuthorizationHeader] attribute from the Swagger documentation.
+    /// </summary>
+    [UsedImplicitly]
+    private sealed class RemoveParametersExtractFromAuthorizationHeader : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            if (operation.Parameters != null)
+            {
+                operation.Parameters = operation.Parameters
+                    .Where(p => !ParameterHasAuthorizationHeaderAttribute(context, p.Name))
+                    .ToList();
+            }
+        }
+
+        private static bool ParameterHasAuthorizationHeaderAttribute(OperationFilterContext context, string parameterName)
+        {
+            return context.MethodInfo
+                .GetParameters()
+                .Any(parameterInfo =>
+                    parameterInfo.Name == parameterName &&
+                    parameterInfo.GetCustomAttributes(typeof(FromAuthorizationHeaderAttribute), false).Length != 0);
+        }
+    }
+}
