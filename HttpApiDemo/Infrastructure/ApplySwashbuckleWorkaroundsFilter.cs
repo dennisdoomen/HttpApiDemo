@@ -1,3 +1,10 @@
+/*
+ * This file contains Swashbuckle-specific workarounds that may not be needed with NSwag.
+ * Commenting out for now during migration to NSwag.
+ * TODO: Review if any of these workarounds are still needed with NSwag.
+ */
+
+/*
 using System.Text.Json;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
@@ -7,6 +14,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
 
+/*
 /// <summary>
 /// Applies workaround for know Swashbuckle issues and limitations.
 /// </summary>
@@ -80,3 +88,4 @@ internal sealed class ApplySwashbuckleWorkaroundsFilter : IOperationFilter
         }
     }
 }
+*/

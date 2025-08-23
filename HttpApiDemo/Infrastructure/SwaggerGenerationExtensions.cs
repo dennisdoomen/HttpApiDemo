@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
+using NSwag.AspNetCore;
+using NSwag.Generation.Processors.Contexts;
+using NSwag;
+using NSwag.Generation;
 
 namespace HttpApiDemo.Infrastructure;
 
@@ -9,109 +11,50 @@ internal static class SwaggerGenerationExtensions
 {
     internal static void AddSwaggerGen(this WebApplicationBuilder builder)
     {
-        builder.Services.AddApiVersioning(options =>
-            {
-                options.ReportApiVersions = true;
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.UnsupportedApiVersionStatusCode = 404; // NotFound
-            })
-            .AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'VVV";
-                options.FormatGroupName = (group, version) => $"{group}-{version}";
-                options.SubstitutionFormat = "V";
-                options.SubstituteApiVersionInUrl = true;
-            });
-
-        builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, SwaggerByApiVersionSplitter>();
-        builder.Services.AddSwaggerGen(options =>
+        // Temporarily simplified - disable complex API versioning for initial NSwag migration
+        // TODO: Re-implement API versioning support for NSwag
+        
+        // Add NSwag OpenAPI document generation
+        builder.Services.AddOpenApiDocument(settings =>
         {
-            // Add a custom operation filter which sets default values
-            options.OperationFilter<ApplySwashbuckleWorkaroundsFilter>();
-
+            settings.Title = "Demo API";
+            settings.Version = "v1";
+            
             var fileName = typeof(Program).Assembly.GetName().Name + ".xml";
             var filePath = Path.Combine(AppContext.BaseDirectory, fileName);
 
-            // Integrate xml comments
-            options.IncludeXmlComments(filePath);
+            // TODO: Add XML documentation support for NSwag
+            // if (File.Exists(filePath)) { ... }
 
-            AddSecurityDefinitions(options);
-            AddSecurityRequirements(options);
+            // Add security definitions for Bearer token
+            settings.AddSecurity("Bearer", [], new OpenApiSecurityScheme
+            {
+                Type = OpenApiSecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+            });
+
+            // Add security definitions for Basic auth
+            settings.AddSecurity("Basic", [], new OpenApiSecurityScheme
+            {
+                Type = OpenApiSecuritySchemeType.Http,
+                Scheme = "Basic",
+                Description = "Basic Authentication using the HTTP Basic scheme. Provide a Base64-encoded 'username:password' " +
+                              "in the Authorization header. Example: \"Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=\""
+            });
         });
     }
 
     internal static void UseSwaggerUi(this WebApplication app)
     {
-        app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
-
-        app.UseSwaggerUI(options =>
+        // Use NSwag OpenAPI and Swagger UI
+        app.UseOpenApi();
+        app.UseSwaggerUi(settings =>
         {
-            var descriptions = app.DescribeApiVersions();
-            var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
-
-            // build a swagger endpoint for each discovered API version
-            foreach (var description in sortedDescriptions)
-            {
-                var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
-                var name = description.GroupName;
-                options.SwaggerEndpoint(url, name);
-                options.RoutePrefix = "api-docs";
-                options.DocumentTitle = "Demo API's";
-            }
+            settings.Path = "/api-docs";
+            settings.DocumentTitle = "Demo API's";
         });
     }
 
-    private static void AddSecurityDefinitions(SwaggerGenOptions options)
-    {
-        // Add an Authorize button to enable bearer token authentication
-        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer"
-        });
-
-        // Add an Authorize button to enable basic authentication
-        options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
-        {
-            Description = "Basic Authentication using the HTTP Basic scheme. Provide a Base64-encoded 'username:password' " +
-                          "in the Authorization header. Example: \"Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "basic",
-        });
-    }
-
-    private static void AddSecurityRequirements(SwaggerGenOptions options)
-    {
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Basic"
-                    }
-                },
-                []
-            },
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                []
-            }
-        });
-    }
 }
