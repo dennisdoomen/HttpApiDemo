@@ -44,13 +44,47 @@ internal static class SwaggerGenerationExtensions
 
     internal static void UseScalar(this WebApplication app)
     {
-        // Use default Swagger/OpenAPI generation
+        // Use default Swagger/OpenAPI generation (not custom route template)
         app.UseSwagger();
-        
-        // Map Scalar at default route
-        app.MapScalarApiReference()
-            .WithName("scalar")
-            .WithDisplayName("API Documentation");
+
+        var descriptions = app.DescribeApiVersions();
+        var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
+
+        // Configure Scalar to use the same route as original SwaggerUI (/api-docs)
+        if (sortedDescriptions.Any())
+        {
+            var defaultDescription = sortedDescriptions.First();
+            // Use default swagger pattern: /swagger/{documentName}/swagger.json
+            var openApiUrl = $"/swagger/{defaultDescription.GroupName}/swagger.json";
+
+            // Map Scalar at /api-docs (exactly where SwaggerUI was)
+            app.MapGet("/api-docs", () => Results.Content(
+                GetScalarHtml(openApiUrl, "Demo API's"), 
+                "text/html"))
+                .WithName("scalar-ui")
+                .ExcludeFromDescription();
+        }
+    }
+
+    private static string GetScalarHtml(string openApiUrl, string title)
+    {
+        return $@"<!DOCTYPE html>
+<html>
+  <head>
+    <title>{title}</title>
+    <meta charset=""utf-8"" />
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1"" />
+  </head>
+  <body>
+    <script
+      id=""api-reference""
+      type=""application/json""
+      data-url=""{openApiUrl}""
+    >
+    </script>
+    <script src=""https://cdn.jsdelivr.net/npm/@scalar/api-reference""></script>
+  </body>
+</html>";
     }
 
     private static void AddSecurityDefinitions(SwaggerGenOptions options)
