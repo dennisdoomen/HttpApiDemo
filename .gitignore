@@ -192,3 +192,7 @@ Tests/Benchmarks/BenchmarkDotNet.Artifacts/
 
 # Documentation spell check
 node_modules/
+
+# Installation scripts
+dotnet-install.sh
+packages-microsoft-prod.deb

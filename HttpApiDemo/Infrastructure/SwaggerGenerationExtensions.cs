@@ -1,13 +1,10 @@
 using Asp.Versioning;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
 
 internal static class SwaggerGenerationExtensions
 {
-    internal static void AddSwaggerGen(this WebApplicationBuilder builder)
+    internal static void AddOpenApi(this WebApplicationBuilder builder)
     {
         builder.Services.AddApiVersioning(options =>
             {
@@ -24,94 +21,44 @@ internal static class SwaggerGenerationExtensions
                 options.SubstituteApiVersionInUrl = true;
             });
 
-        builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, SwaggerByApiVersionSplitter>();
-        builder.Services.AddSwaggerGen(options =>
-        {
-            // Add a custom operation filter which sets default values
-            options.OperationFilter<ApplySwashbuckleWorkaroundsFilter>();
+        // Add .NET 9 built-in OpenAPI support
+        builder.Services.AddOpenApi();
 
+        // Add endpoints API explorer for controller discovery
+        builder.Services.AddEndpointsApiExplorer();
+
+        // Add NSwag services for enhanced documentation and UI
+        builder.Services.AddOpenApiDocument(configure =>
+        {
+            configure.Title = "Demo API";
+            configure.Version = "v1";
+            configure.DocumentName = "v1";
+            
+            // Include XML comments
             var fileName = typeof(Program).Assembly.GetName().Name + ".xml";
             var filePath = Path.Combine(AppContext.BaseDirectory, fileName);
-
-            // Integrate xml comments
-            options.IncludeXmlComments(filePath);
-
-            AddSecurityDefinitions(options);
-            AddSecurityRequirements(options);
-        });
-    }
-
-    internal static void UseSwaggerUi(this WebApplication app)
-    {
-        app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
-
-        app.UseSwaggerUI(options =>
-        {
-            var descriptions = app.DescribeApiVersions();
-            var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
-
-            // build a swagger endpoint for each discovered API version
-            foreach (var description in sortedDescriptions)
+            if (File.Exists(filePath))
             {
-                var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
-                var name = description.GroupName;
-                options.SwaggerEndpoint(url, name);
-                options.RoutePrefix = "api-docs";
-                options.DocumentTitle = "Demo API's";
+                configure.PostProcess = document =>
+                {
+                    document.Info.Title = "Demo API";
+                    document.Info.Version = "v1";
+                };
             }
         });
     }
 
-    private static void AddSecurityDefinitions(SwaggerGenOptions options)
+    internal static void UseOpenApiUi(this WebApplication app)
     {
-        // Add an Authorize button to enable bearer token authentication
-        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        // Use .NET 9 built-in OpenAPI
+        app.MapOpenApi();
+        
+        // Use NSwag UI for better documentation experience
+        app.UseOpenApi();
+        app.UseSwaggerUi(settings =>
         {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer"
-        });
-
-        // Add an Authorize button to enable basic authentication
-        options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
-        {
-            Description = "Basic Authentication using the HTTP Basic scheme. Provide a Base64-encoded 'username:password' " +
-                          "in the Authorization header. Example: \"Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "basic",
-        });
-    }
-
-    private static void AddSecurityRequirements(SwaggerGenOptions options)
-    {
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Basic"
-                    }
-                },
-                []
-            },
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                []
-            }
+            settings.Path = "/api-docs";
+            settings.DocumentPath = "/swagger/v1/swagger.json";
         });
     }
 }

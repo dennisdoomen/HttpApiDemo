@@ -23,7 +23,7 @@ public class Program
         builder.Services.AddHealthChecking(builder.Configuration);
 
         // Debugging with app insights is not required.
-        if (!builder.Environment.IsDevelopment() && builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString") != null)
+        if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString")))
         {
             builder.AddAppInsights(builder.Configuration);
         }
@@ -47,8 +47,7 @@ public class Program
         builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
         // Enable OpenAPI endspoints
-        builder.AddSwaggerGen();
-        builder.Services.AddEndpointsApiExplorer();
+        builder.AddOpenApi();
 
         // Make sure enums are serialized to their name and not their number
         builder.Services.Configure<JsonOptions>(options =>
@@ -58,7 +57,7 @@ public class Program
 
         var app = builder.Build();
 
-        app.UseSwaggerUi();
+        app.UseOpenApiUi();
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseCors();
