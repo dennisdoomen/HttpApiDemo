@@ -45,21 +45,21 @@ internal static class SwaggerGenerationExtensions
     {
         app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
 
-        app.UseSwaggerUI(options =>
-        {
             var descriptions = app.DescribeApiVersions();
             var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
 
-            // build a swagger endpoint for each discovered API version
+            // Build a ReDoc page for every API version (and group) as ReDoc does not support multiple API versions in an integrated UI
             foreach (var description in sortedDescriptions)
             {
-                var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
-                var name = description.GroupName;
-                options.SwaggerEndpoint(url, name);
-                options.RoutePrefix = "api-docs";
-                options.DocumentTitle = "Demo API's";
+                app.UseReDoc(options =>
+                {
+                    var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
+                    var name = description.GroupName;
+                    options.RoutePrefix = "api-docs/" + name;
+                    options.SpecUrl = url;
+                    options.DocumentTitle = name;
+                });
             }
-        });
     }
 
     private static void AddSecurityDefinitions(SwaggerGenOptions options)
