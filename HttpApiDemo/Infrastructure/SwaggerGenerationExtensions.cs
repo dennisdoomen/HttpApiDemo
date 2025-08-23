@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
@@ -41,25 +42,29 @@ internal static class SwaggerGenerationExtensions
         });
     }
 
-    internal static void UseSwaggerUi(this WebApplication app)
+    internal static void UseScalar(this WebApplication app)
     {
         app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
 
-        app.UseSwaggerUI(options =>
-        {
-            var descriptions = app.DescribeApiVersions();
-            var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
+        var descriptions = app.DescribeApiVersions();
+        var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
 
-            // build a swagger endpoint for each discovered API version
-            foreach (var description in sortedDescriptions)
+        // Set up Scalar at /api-docs endpoint (replaces SwaggerUI)
+        if (sortedDescriptions.Any())
+        {
+            var defaultDescription = sortedDescriptions.First();
+            var openApiUrl = $"/api-docs/v{defaultDescription.ApiVersion.MajorVersion}/open-api-{defaultDescription.GroupName}.json";
+
+            app.MapScalarApiReference(options =>
             {
-                var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
-                var name = description.GroupName;
-                options.SwaggerEndpoint(url, name);
-                options.RoutePrefix = "api-docs";
-                options.DocumentTitle = "Demo API's";
-            }
-        });
+                options
+                    .WithTitle("Demo API's")
+                    .WithOpenApiRoutePattern(openApiUrl)
+                    .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+            })
+            .WithDisplayName("API Documentation")
+            .WithName("scalar-api-docs");
+        }
     }
 
     private static void AddSecurityDefinitions(SwaggerGenOptions options)

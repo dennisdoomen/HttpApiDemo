@@ -61,7 +61,7 @@ public class Program
 
         var app = builder.Build();
 
-        app.UseSwaggerUi();
+        app.UseScalar();
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseCors();
