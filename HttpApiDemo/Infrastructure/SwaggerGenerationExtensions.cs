@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
@@ -45,19 +46,23 @@ internal static class SwaggerGenerationExtensions
     {
         app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
 
-        app.UseSwaggerUI(options =>
+        app.MapScalarApiReference(options =>
         {
+            options
+                .WithTitle("v1 Penguins API")
+                .WithTheme(ScalarTheme.DeepSpace)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+
             var descriptions = app.DescribeApiVersions();
             var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
 
-            // build a swagger endpoint for each discovered API version
+            // Build a swagger endpoint for each discovered API version
             foreach (var description in sortedDescriptions)
             {
                 var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
                 var name = description.GroupName;
-                options.SwaggerEndpoint(url, name);
-                options.RoutePrefix = "api-docs";
-                options.DocumentTitle = "Demo API's";
+
+                options.AddDocument(name, name, url);
             }
         });
     }
