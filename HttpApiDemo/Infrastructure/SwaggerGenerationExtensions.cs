@@ -44,27 +44,13 @@ internal static class SwaggerGenerationExtensions
 
     internal static void UseScalar(this WebApplication app)
     {
-        app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
-
-        var descriptions = app.DescribeApiVersions();
-        var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
-
-        // Set up Scalar at /api-docs endpoint (replaces SwaggerUI)
-        if (sortedDescriptions.Any())
-        {
-            var defaultDescription = sortedDescriptions.First();
-            var openApiUrl = $"/api-docs/v{defaultDescription.ApiVersion.MajorVersion}/open-api-{defaultDescription.GroupName}.json";
-
-            app.MapScalarApiReference(options =>
-            {
-                options
-                    .WithTitle("Demo API's")
-                    .WithOpenApiRoutePattern(openApiUrl)
-                    .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-            })
-            .WithDisplayName("API Documentation")
-            .WithName("scalar-api-docs");
-        }
+        // Use default Swagger/OpenAPI generation
+        app.UseSwagger();
+        
+        // Map Scalar at default route
+        app.MapScalarApiReference()
+            .WithName("scalar")
+            .WithDisplayName("API Documentation");
     }
 
     private static void AddSecurityDefinitions(SwaggerGenOptions options)
