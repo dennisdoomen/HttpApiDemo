@@ -1,20 +1,15 @@
+using System.ComponentModel;
+
 namespace HttpApiDemo;
 
 public record PackageInfo
 {
-    /// <summary>
-    /// Gets or sets the unique identifier for a package.
-    /// </summary>
+    [Description("The unique identifier for a package")]
     public required string Id { get; init; }
 
-    /// <summary>
-    /// Gets the total number of downloads for the package across all versions.
-    /// </summary>
+    [Description("The total number of downloads for the package across all versions")]
     public int TotalDownloads { get; init; }
 
-    /// <summary>
-    /// Gets or sets the collection of available versions for a package,
-    /// including related metadata such as downloads, descriptions, and URLs.
-    /// </summary>
+    [Description("The collection of available versions for a package, including related metadata such as downloads, descriptions, and URLs")]
     public IEnumerable<VersionInfo> Versions { get; init; } = [];
 }

@@ -35,12 +35,12 @@
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
-    <PackageReference Include="NSwag.AspNetCore" Version="14.0.0" />
     <PackageReference Update="Meziantou.Analyzer" Version="2.0.212">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-
+    <PackageReference Include="Scalar.AspNetCore" Version="2.7.0" />
+    <PackageReference Include="Scalar.AspNetCore.Swashbuckle" Version="2.7.0" />
   </ItemGroup>
 
 
