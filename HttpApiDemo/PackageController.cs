@@ -19,7 +19,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [Route("")]
     [MapToApiVersion("2.0")]
     [ApiExplorerSettings(GroupName = "public")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<PackageResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPackages()
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -31,11 +31,13 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
 
         var packages = await packageProvider.GetPackageList();
 
-        return Ok(packages.Select(x => new
+        IEnumerable<PackageResponse> response = packages.Select(x => new PackageResponse
         {
             Id = x.Id,
             Description = x.Description,
-        }));
+        });
+
+        return Ok(response);
     }
 
     [EndpointSummary("Retrieves information and statistics about a specific package")]
@@ -44,9 +46,9 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [Route("{packageId}")]
     [MapToApiVersion("1.0")]
     [ApiExplorerSettings(GroupName = "internal")]
-    [ProducesResponseType(typeof(PackageInfo), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(PackageWithVersionSummaryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPackageByIdV1([Description("The unique identifier of the package")] string packageId)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -59,33 +61,28 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (string.IsNullOrWhiteSpace(packageId))
         {
             logger.LogWarning("A non-empty package ID is required");
-            return BadRequest(new
-            {
-                Error = "A non-empty package ID is required"
-            });
+            return BadRequest(new ErrorResponse { Error = "A non-empty package ID is required" });
         }
 
         PackageInfo? package = await packageProvider.FindPackageInfo(packageId);
         if (package is null)
         {
             logger.LogWarning("Could not find a package with ID {packageId}", packageId);
-            return NotFound(new
-            {
-                Error = $"Could not find a package with ID {packageId}"
-            });
+            return NotFound(new ErrorResponse { Error = $"Could not find a package with ID {packageId}" });
         }
 
-        return Ok(new
+        var response = new PackageWithVersionSummaryResponse
         {
             Id = package.Id,
-            Versions = package.Versions.Select(v => new
+            Versions = package.Versions.Select(v => new VersionSummary
             {
-                v.Version,
-                v.Description,
-                v.RepositoryUrl,
-                v.Owner
-            })
-        });
+                Version = v.Version,
+                Description = v.Description,
+                RepositoryUrl = v.RepositoryUrl,
+                Owner = v.Owner
+            }).ToList()
+        };
+        return Ok(response);
     }
 
     [EndpointSummary("Retrieves information and statistics about a specific package")]
@@ -94,9 +91,9 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [Route("{packageId}")]
     [MapToApiVersion("2.0")]
     [ApiExplorerSettings(GroupName = "internal")]
-    [ProducesResponseType(typeof(PackageInfo), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(PackageWithVersionDetailsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPackageByIdV2([Description("The unique identifier of the package")] string packageId)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -109,37 +106,32 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (string.IsNullOrWhiteSpace(packageId))
         {
             logger.LogWarning("A non-empty package ID is required");
-            return BadRequest(new
-            {
-                Error = "A non-empty package ID is required"
-            });
+            return BadRequest(new ErrorResponse { Error = "A non-empty package ID is required" });
         }
 
         PackageInfo? package = await packageProvider.FindPackageInfo(packageId);
         if (package is null)
         {
             logger.LogWarning("Could not find a package with ID {packageId}", packageId);
-            return NotFound(new
-            {
-                Error = $"Could not find a package with ID {packageId}"
-            });
+            return NotFound(new ErrorResponse { Error = $"Could not find a package with ID {packageId}" });
         }
 
-        return Ok(new
+        var response = new PackageWithVersionDetailsResponse
         {
             Id = package.Id,
-            Versions = package.Versions.Select(v => new
+            Versions = package.Versions.Select(v => new VersionDetails
             {
-                v.Version,
-                v.Description,
-                v.Readme,
-                v.LicenseUrl,
-                v.ProjectUrl,
-                v.IconUrl,
-                v.RepositoryUrl,
-                v.Owner
-            })
-        });
+                Version = v.Version,
+                Description = v.Description,
+                Readme = v.Readme,
+                LicenseUrl = v.LicenseUrl,
+                ProjectUrl = v.ProjectUrl,
+                IconUrl = v.IconUrl,
+                RepositoryUrl = v.RepositoryUrl,
+                Owner = v.Owner
+            }).ToList()
+        };
+        return Ok(response);
     }
 
     [EndpointSummary("Retrieves statistics about a specific package")]
@@ -148,9 +140,9 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [Route("{packageId}/statistics")]
     [ApiExplorerSettings(GroupName = "private")]
     [MapToApiVersion("2.0")]
-    [ProducesResponseType(typeof(PackageInfo), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(PackageStatistics), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetStatistics([Description("The unique identifier of the package")] string packageId)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -163,27 +155,22 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (string.IsNullOrWhiteSpace(packageId))
         {
             logger.LogWarning("A non-empty package ID is required");
-            return BadRequest(new
-            {
-                Error = "A non-empty package ID is required"
-            });
+            return BadRequest(new ErrorResponse { Error = "A non-empty package ID is required" });
         }
 
         PackageInfo? package = await packageProvider.FindPackageInfo(packageId);
         if (package is null)
         {
             logger.LogWarning("Could not find a package with ID {packageId}", packageId);
-            return NotFound(new
-            {
-                Error = $"Could not find a package with ID {packageId}"
-            });
+            return NotFound(new ErrorResponse { Error = $"Could not find a package with ID {packageId}" });
         }
 
-        return Ok(new
+        var response = new PackageStatistics
         {
             Id = package.Id,
             TotalDownloads = package.TotalDownloads
-        });
+        };
+        return Ok(response);
     }
 
     [EndpointSummary("Deprecated packages endpoint")]
