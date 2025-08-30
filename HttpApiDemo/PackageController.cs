@@ -20,7 +20,9 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [MapToApiVersion("2.0")]
     [ApiExplorerSettings(GroupName = "public")]
     [ProducesResponseType(typeof(IEnumerable<PackageResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPackages()
+    public async Task<IActionResult> GetPackages(
+        [FromQuery(Name = "$skip")] int skip = 0,
+        [FromQuery(Name = "$take")] int take = 100)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
         Response.Headers.CacheControl = new CacheControlHeaderValue
@@ -31,7 +33,10 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
 
         var packages = await packageProvider.GetPackageList();
 
-        IEnumerable<PackageResponse> response = packages.Select(x => new PackageResponse
+        IEnumerable<PackageResponse> response = packages
+            .Skip(skip)
+            .Take(take)
+            .Select(x => new PackageResponse
         {
             Id = x.Id,
             Description = x.Description,
@@ -149,7 +154,8 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         Response.Headers.CacheControl = new CacheControlHeaderValue
         {
             Private = false,
-            Public = true,
+            Public = false,
+            NoCache = true
         }.ToString();
 
         if (string.IsNullOrWhiteSpace(packageId))
