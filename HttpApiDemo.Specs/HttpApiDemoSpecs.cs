@@ -78,14 +78,14 @@ public class HttpApiDemoSpecs(CustomWebApplicationFactory httpFactory) : IClassF
             {
                 new
                 {
-                    Description = Value.ThatMatches<string>(x => x.Contains("path")),
+                    Description = "Fluently building and using file and directory paths without binary dependencies",
                     Owner = "dennisdoomen",
                     RepositoryUrl = "https://github.com/dennisdoomen/pathy",
                     Version = "1.5.0"
                 },
                 new
                 {
-                    Description = Value.ThatMatches<string>(x => x.Contains("path")),
+                    Description = "Fluently building and using file and directory paths without binary dependencies",
                     Owner = "dennisdoomen",
                     RepositoryUrl = "https://github.com/dennisdoomen/pathy",
                     Version = "1.0.0"

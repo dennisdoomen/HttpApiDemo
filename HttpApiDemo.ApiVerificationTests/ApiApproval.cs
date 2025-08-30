@@ -47,7 +47,13 @@ public class ApiApproval
             var csproj = SourcePath / "HttpApiDemo" / "HttpApiDemo.csproj";
             var project = XDocument.Load(csproj);
             var targetFrameworks = project.XPathSelectElement("/Project/PropertyGroup/TargetFrameworks");
-            AddRange(targetFrameworks!.Value.Split(';'));
+            var targetFramework = project.XPathSelectElement("/Project/PropertyGroup/TargetFramework");
+            var frameworks = targetFrameworks != null
+                ? targetFrameworks.Value.Split(';')
+                : targetFramework != null
+                    ? new[] { targetFramework.Value }
+                    : new string[0];
+            AddRange(frameworks);
         }
     }
 }

@@ -1,0 +1,224 @@
+﻿[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsId("0af9086d-7dea-4c39-9d18-afbed67ab946")]
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/your-user-name/my-package")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("HttpApiDemo.Specs")]
+namespace HttpApiDemo
+{
+    public class ErrorResponse : System.IEquatable<HttpApiDemo.ErrorResponse>
+    {
+        public ErrorResponse() { }
+        [System.ComponentModel.Description("The error message describing what went wrong")]
+        public required string Error { get; init; }
+    }
+    public interface IRequirePackageInformation
+    {
+        System.Threading.Tasks.Task<bool> DeletePackage(string packageId);
+        System.Threading.Tasks.Task<HttpApiDemo.PackageInfo?> FindPackageInfo(string packageId);
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Id",
+                "Description"})]
+        System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList();
+        System.Threading.Tasks.Task<bool> PatchPackage(string packageId, int? totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo>? versions);
+        System.Threading.Tasks.Task<bool> UpsertPackage(string packageId, int totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> versions);
+    }
+    [Asp.Versioning.ApiVersion("1.0", Deprecated=true)]
+    [Asp.Versioning.ApiVersion("2.0")]
+    [Microsoft.AspNetCore.Mvc.ApiController]
+    [Microsoft.AspNetCore.Mvc.Produces("application/json", new string[0])]
+    [Microsoft.AspNetCore.Mvc.Route("api/packages/")]
+    [Microsoft.AspNetCore.Mvc.Route("api/v{version:apiVersion}/packages/")]
+    public class PackageController : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        public PackageController(HttpApiDemo.IRequirePackageInformation packageProvider, Microsoft.Extensions.Logging.ILogger<HttpApiDemo.PackageController> logger) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpDelete]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(204)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeletePackage([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
+        [Asp.Versioning.MapToApiVersion("1.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="internal")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionSummaryResponse), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackageByIdV1([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="internal")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackageByIdV2([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
+        [Asp.Versioning.MapToApiVersion("1.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="public")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(200)]
+        [Microsoft.AspNetCore.Mvc.Route("")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackages([Microsoft.AspNetCore.Mvc.FromQuery] [System.ComponentModel.Description("Package identifier parameter (not used in this deprecated endpoint)")] string packageId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="public")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(System.Collections.Generic.IEnumerable<HttpApiDemo.PackageResponse>), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackages([Microsoft.AspNetCore.Mvc.FromQuery(Name="$skip")] int skip = 0, [Microsoft.AspNetCore.Mvc.FromQuery(Name="$take")] int take = 100) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageStatistics), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}/statistics")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetStatistics([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpPatch]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(204)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> PatchPackage([System.ComponentModel.Description("The unique identifier of the package")] string packageId, [Microsoft.AspNetCore.Mvc.FromBody] HttpApiDemo.PatchPackageRequest? request) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpPut]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 200)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 201)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> PutPackage([System.ComponentModel.Description("The unique identifier of the package")] string packageId, [Microsoft.AspNetCore.Mvc.FromBody] HttpApiDemo.PutPackageRequest? request) { }
+    }
+    public class PackageInfo : System.IEquatable<HttpApiDemo.PackageInfo>
+    {
+        public PackageInfo() { }
+        [System.ComponentModel.Description("The unique identifier for a package")]
+        public required string Id { get; init; }
+        [System.ComponentModel.Description("The total number of downloads for the package across all versions")]
+        public int TotalDownloads { get; init; }
+        [System.ComponentModel.Description("The collection of available versions for a package, including related metadata su" +
+            "ch as downloads, descriptions, and URLs")]
+        public System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> Versions { get; init; }
+    }
+    public class PackageRepository : HttpApiDemo.IRequirePackageInformation
+    {
+        public PackageRepository() { }
+        public System.Threading.Tasks.Task<bool> DeletePackage(string packageId) { }
+        public System.Threading.Tasks.Task<HttpApiDemo.PackageInfo?> FindPackageInfo(string packageId) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Id",
+                "Description"})]
+        public System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList() { }
+        public System.Threading.Tasks.Task<bool> PatchPackage(string packageId, int? totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo>? versions) { }
+        public System.Threading.Tasks.Task<bool> UpsertPackage(string packageId, int totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> versions) { }
+    }
+    public class PackageResponse : System.IEquatable<HttpApiDemo.PackageResponse>
+    {
+        public PackageResponse() { }
+        [System.ComponentModel.Description("A short functional description of the package")]
+        public required string Description { get; init; }
+        [System.ComponentModel.Description("The unique identifier for a package")]
+        public required string Id { get; init; }
+    }
+    public class PackageStatistics : System.IEquatable<HttpApiDemo.PackageStatistics>
+    {
+        public PackageStatistics() { }
+        [System.ComponentModel.Description("The unique identifier for a package")]
+        public required string Id { get; init; }
+        [System.ComponentModel.Description("The total number of downloads for the package across all versions")]
+        public required int TotalDownloads { get; init; }
+    }
+    public class PackageWithVersionDetailsResponse : System.IEquatable<HttpApiDemo.PackageWithVersionDetailsResponse>
+    {
+        public PackageWithVersionDetailsResponse() { }
+        [System.ComponentModel.Description("The unique identifier for a package")]
+        public required string Id { get; init; }
+        [System.ComponentModel.Description("The versions of the package with extended metadata (including readme, license, pr" +
+            "oject, icon, repository and owner)")]
+        public required System.Collections.Generic.IEnumerable<HttpApiDemo.VersionDetails> Versions { get; init; }
+    }
+    public class PackageWithVersionSummaryResponse : System.IEquatable<HttpApiDemo.PackageWithVersionSummaryResponse>
+    {
+        public PackageWithVersionSummaryResponse() { }
+        [System.ComponentModel.Description("The unique identifier for a package")]
+        public required string Id { get; init; }
+        [System.ComponentModel.Description("The versions of the package with basic metadata (version, description, repository" +
+            " and owner)")]
+        public required System.Collections.Generic.IEnumerable<HttpApiDemo.VersionSummary> Versions { get; init; }
+    }
+    public class PatchPackageRequest : System.IEquatable<HttpApiDemo.PatchPackageRequest>
+    {
+        public PatchPackageRequest() { }
+        [System.ComponentModel.Description("Optional replacement for the total number of downloads")]
+        public int? TotalDownloads { get; init; }
+        [System.ComponentModel.Description("Optional replacement of the entire versions list. When provided, it replaces the " +
+            "full set.")]
+        public System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo>? Versions { get; init; }
+    }
+    public class Program
+    {
+        public Program() { }
+        public static void Main(string[] args) { }
+    }
+    public class PutPackageRequest : System.IEquatable<HttpApiDemo.PutPackageRequest>
+    {
+        public PutPackageRequest() { }
+        [System.ComponentModel.Description("The total number of downloads for the package across all versions")]
+        public required int TotalDownloads { get; init; }
+        [System.ComponentModel.Description("The versions that belong to this package registration")]
+        public required System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> Versions { get; init; }
+    }
+    public class VersionDetails : System.IEquatable<HttpApiDemo.VersionDetails>
+    {
+        public VersionDetails() { }
+        [System.ComponentModel.Description("The description of this version of the package")]
+        public required string Description { get; init; }
+        [System.ComponentModel.Description("The URL to the icon for this version")]
+        public required string IconUrl { get; init; }
+        [System.ComponentModel.Description("The URL to the license for this version")]
+        public required string LicenseUrl { get; init; }
+        [System.ComponentModel.Description("The owner or maintainer of this version")]
+        public required string Owner { get; init; }
+        [System.ComponentModel.Description("The URL to the project site for this version")]
+        public required string ProjectUrl { get; init; }
+        [System.ComponentModel.Description("The readme content or a link to the readme for this version")]
+        public required string Readme { get; init; }
+        [System.ComponentModel.Description("The URL to the repository for this version")]
+        public required string RepositoryUrl { get; init; }
+        [System.ComponentModel.Description("The version string of the package (e.g., \'1.2.3\')")]
+        public required string Version { get; init; }
+    }
+    public class VersionInfo : System.IEquatable<HttpApiDemo.VersionInfo>
+    {
+        public VersionInfo() { }
+        [System.ComponentModel.Description("The description of this version of the package")]
+        public required string Description { get; init; }
+        [System.ComponentModel.Description("The URL to the icon for this version")]
+        public required string IconUrl { get; init; }
+        [System.ComponentModel.Description("The license type or SPDX identifier for this version")]
+        public required string License { get; init; }
+        [System.ComponentModel.Description("The URL to the license for this version")]
+        public required string LicenseUrl { get; init; }
+        [System.ComponentModel.Description("The owner or maintainer of this version")]
+        public required string Owner { get; set; }
+        [System.ComponentModel.Description("The URL to the project site for this version")]
+        public required string ProjectUrl { get; init; }
+        [System.ComponentModel.Description("The readme content or a link to the readme for this version")]
+        public required string Readme { get; init; }
+        [System.ComponentModel.Description("The URL to the repository for this version")]
+        public required string RepositoryUrl { get; init; }
+        [System.ComponentModel.Description("The version string of the package (e.g., \"1.2.3\", \"1.2.3-beta\")")]
+        public required string Version { get; init; }
+    }
+    public class VersionSummary : System.IEquatable<HttpApiDemo.VersionSummary>
+    {
+        public VersionSummary() { }
+        [System.ComponentModel.Description("The description of this version of the package")]
+        public required string Description { get; init; }
+        [System.ComponentModel.Description("The owner or maintainer of this version")]
+        public required string Owner { get; init; }
+        [System.ComponentModel.Description("The URL to the repository for this version")]
+        public required string RepositoryUrl { get; init; }
+        [System.ComponentModel.Description("The version string of the package (e.g., \'1.2.3\')")]
+        public required string Version { get; init; }
+    }
+}

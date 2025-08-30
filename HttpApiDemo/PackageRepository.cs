@@ -1,17 +1,68 @@
 namespace HttpApiDemo;
 
+using System.Collections.Concurrent;
+
 public class PackageRepository : IRequirePackageInformation
 {
-    public Task<PackageInfo?> FindPackageInfo(string packageId)
+    private readonly ConcurrentDictionary<string, PackageInfo> _packages = new(StringComparer.CurrentCultureIgnoreCase);
+
+    public PackageRepository()
     {
-        return Task.FromResult(examplePackages.FirstOrDefault(x =>
-            x.Id.Equals(packageId, StringComparison.CurrentCultureIgnoreCase)));
+        // Seed initial data
+        foreach (var p in examplePackages)
+        {
+            _packages[p.Id] = p;
+        }
     }
 
-    public Task<IEnumerable<(string Id, string Description)>> GetPackageList() => Task.FromResult(examplePackages
-        .Select(x => (x.Id, x.Versions.FirstOrDefault()?.Description ?? string.Empty))
-        .AsEnumerable());
+    public Task<PackageInfo?> FindPackageInfo(string packageId)
+    {
+        _packages.TryGetValue(packageId, out var pkg);
+        return Task.FromResult(pkg);
+    }
 
+    public Task<IEnumerable<(string Id, string Description)>> GetPackageList() => Task.FromResult(
+        _packages.Values
+            .Select(x => (x.Id, x.Versions.FirstOrDefault()?.Description ?? string.Empty))
+            .AsEnumerable());
+
+    public Task<bool> UpsertPackage(string packageId, int totalDownloads, IEnumerable<VersionInfo> versions)
+    {
+        var created = !_packages.ContainsKey(packageId);
+        var normalized = new PackageInfo
+        {
+            Id = packageId,
+            TotalDownloads = totalDownloads,
+            Versions = versions?.ToArray() ?? Array.Empty<VersionInfo>()
+        };
+        _packages.AddOrUpdate(packageId, _ => normalized, (_, _) => normalized);
+        return Task.FromResult(created);
+    }
+
+    public Task<bool> PatchPackage(string packageId, int? totalDownloads, IEnumerable<VersionInfo>? versions)
+    {
+        if (!_packages.TryGetValue(packageId, out var existing))
+        {
+            return Task.FromResult(false);
+        }
+
+        var updated = new PackageInfo
+        {
+            Id = existing.Id,
+            TotalDownloads = totalDownloads ?? existing.TotalDownloads,
+            Versions = versions?.ToArray() ?? existing.Versions
+        };
+
+        _packages[packageId] = updated;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> DeletePackage(string packageId)
+    {
+        return Task.FromResult(_packages.TryRemove(packageId, out _));
+    }
+
+    // Initial seed data (unchanged)
     private readonly IEnumerable<PackageInfo> examplePackages =
     [
         new()
