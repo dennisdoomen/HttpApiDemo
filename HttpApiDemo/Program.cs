@@ -23,7 +23,8 @@ public class Program
         builder.Services.AddHealthChecking(builder.Configuration);
 
         // Debugging with app insights is not required.
-        if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString")))
+        if (!builder.Environment.IsDevelopment() &&
+            !string.IsNullOrWhiteSpace(builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString")))
         {
             builder.AddAppInsights(builder.Configuration);
         }
@@ -35,7 +36,6 @@ public class Program
         {
             // Enable automatic logging of 400 errors.
             options.Filters.Add<LogRequestFailuresFilter>();
-
         }).ConfigureApiBehaviorOptions(options =>
         {
             var builtInFactory = options.InvalidModelStateResponseFactory;

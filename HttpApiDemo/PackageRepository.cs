@@ -4,7 +4,8 @@ public class PackageRepository : IRequirePackageInformation
 {
     public Task<PackageInfo?> FindPackageInfo(string packageId)
     {
-        return Task.FromResult(examplePackages.FirstOrDefault(x => x.Id.Equals(packageId, StringComparison.CurrentCultureIgnoreCase)));
+        return Task.FromResult(examplePackages.FirstOrDefault(x =>
+            x.Id.Equals(packageId, StringComparison.CurrentCultureIgnoreCase)));
     }
 
     public Task<IEnumerable<(string Id, string Description)>> GetPackageList() => Task.FromResult(examplePackages
@@ -84,32 +85,32 @@ public class PackageRepository : IRequirePackageInformation
         new()
         {
             Id = "Pathy",
-            TotalDownloads = 1449,
+            TotalDownloads = 1843,
             Versions = new[]
             {
                 new VersionInfo
                 {
-                    Version = "0.2.2", // This corresponds to “Path” which may differ from “Pathy”
-                    Description = "Path is a command-line tool to manage PATH environment variable on Windows...",
-                    Readme = "See Path NuGet page.",
-                    LicenseUrl = "",
-                    License = "",
-                    ProjectUrl = "",
+                    Version = "1.5.0", // This corresponds to “Path” which may differ from “Pathy”
+                    Description = "Fluently building and using file and directory paths without binary dependencies",
+                    Readme = "Fluently building and using file and directory paths without binary dependencies",
+                    LicenseUrl = "https://github.com/dennisdoomen/pathy/blob/main/LICENSE",
+                    License = "MIT",
+                    ProjectUrl = "https://github.com/dennisdoomen/pathy",
                     IconUrl = "",
-                    RepositoryUrl = "",
-                    Owner = ""
+                    RepositoryUrl = "https://github.com/dennisdoomen/pathy",
+                    Owner = "dennisdoomen"
                 },
                 new VersionInfo
                 {
-                    Version = "0.2.1", // Hypothetical earlier version
-                    Description = "Previous Path release",
-                    Readme = "",
-                    LicenseUrl = "",
-                    License = "",
-                    ProjectUrl = "",
+                    Version = "1.0.0", // Hypothetical earlier version
+                    Description = "Fluently building and using file and directory paths without binary dependencies",
+                    Readme = "Fluently building and using file and directory paths without binary dependencies",
+                    LicenseUrl = "https://github.com/dennisdoomen/pathy/blob/main/LICENSE",
+                    License = "MIT",
+                    ProjectUrl = "https://github.com/dennisdoomen/pathy",
                     IconUrl = "",
-                    RepositoryUrl = "",
-                    Owner = ""
+                    RepositoryUrl = "https://github.com/dennisdoomen/pathy",
+                    Owner = "dennisdoomen"
                 }
             }
         },

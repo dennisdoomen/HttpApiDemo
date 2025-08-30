@@ -106,10 +106,10 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .EnableNoLogo()
                 .EnableNoRestore()
-				.SetVersion(SemVer)
+                .SetVersion(SemVer)
                 .SetAssemblyVersion(GitVersion.AssemblySemVer)
                 .SetFileVersion(GitVersion.AssemblySemFileVer)
-                .SetInformationalVersion(GitVersion.InformationalVersion) );
+                .SetInformationalVersion(GitVersion.InformationalVersion));
         });
 
     Target RunInspectCode => _ => _
@@ -170,7 +170,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             ReportGenerator(s => s
-				.AddReports(TestResultsDirectory / "**/coverage.cobertura.xml")
+                .AddReports(TestResultsDirectory / "**/coverage.cobertura.xml")
                 .AddReportTypes(ReportTypes.lcov, ReportTypes.Html)
                 .SetTargetDirectory(TestResultsDirectory / "reports")
                 .AddFileFilters("-*.g.cs"));
@@ -178,7 +178,6 @@ class Build : NukeBuild
             string link = TestResultsDirectory / "reports" / "index.html";
             Information($"Code coverage report: \x1b]8;;file://{link.Replace('\\', '/')}\x1b\\{link}\x1b]8;;\x1b\\");
         });
-
 
     Target Pack => _ => _
         .DependsOn(ScanPackages)
@@ -209,7 +208,6 @@ class Build : NukeBuild
                 .SetVersion(SemVer));
         });
 
-
     Target Push => _ => _
         .DependsOn(Pack)
         .OnlyWhenDynamic(() => IsTag)
@@ -230,7 +228,7 @@ class Build : NukeBuild
         });
 
     Target Default => _ => _
-		.DependsOn(Pack)
+        .DependsOn(Pack)
         .DependsOn(Push);
 
     bool IsPullRequest => GitHubActions?.IsPullRequest ?? false;

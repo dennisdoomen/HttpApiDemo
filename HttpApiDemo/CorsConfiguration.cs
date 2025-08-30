@@ -16,10 +16,9 @@ internal static class CorsConfiguration
         {
             builder.Services.AddCors(options =>
             {
-                options.AddDefaultPolicy(
-                    policy => policy.WithOrigins(origins.Split(','))
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
+                options.AddDefaultPolicy(policy => policy.WithOrigins(origins.Split(','))
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
                 );
             });
         }

@@ -10,6 +10,7 @@ public record PackageInfo
     [Description("The total number of downloads for the package across all versions")]
     public int TotalDownloads { get; init; }
 
-    [Description("The collection of available versions for a package, including related metadata such as downloads, descriptions, and URLs")]
+    [Description(
+        "The collection of available versions for a package, including related metadata such as downloads, descriptions, and URLs")]
     public IEnumerable<VersionInfo> Versions { get; init; } = [];
 }
