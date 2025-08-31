@@ -17,7 +17,12 @@ namespace HttpApiDemo
                 "Id",
                 "Description"})]
         System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList();
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Completed",
+                "Id"})]
+        System.Threading.Tasks.Task<System.ValueTuple<HttpApiDemo.UploadStatus, string?>> GetUploadStatus(string pendingId);
         System.Threading.Tasks.Task<bool> PatchPackage(string packageId, int? totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo>? versions);
+        System.Threading.Tasks.Task<string> UploadPackage(string body);
         System.Threading.Tasks.Task<bool> UpsertPackage(string packageId, int totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> versions);
     }
     [Asp.Versioning.ApiVersion("1.0", Deprecated=true)]
@@ -73,6 +78,13 @@ namespace HttpApiDemo
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetStatistics([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
         [Asp.Versioning.MapToApiVersion("2.0")]
         [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(202)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
+        [Microsoft.AspNetCore.Mvc.Route("status/{pendingId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetUploadStatus(string pendingId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
         [Microsoft.AspNetCore.Mvc.HttpPatch]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(204)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
@@ -87,12 +99,23 @@ namespace HttpApiDemo
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 201)]
         [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> PutPackage([System.ComponentModel.Description("The unique identifier of the package")] string packageId, [Microsoft.AspNetCore.Mvc.FromBody] HttpApiDemo.PutPackageRequest? request) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpPost]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(202)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
+        [Microsoft.AspNetCore.Mvc.Route("")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadPackage() { }
     }
     public class PackageInfo : System.IEquatable<HttpApiDemo.PackageInfo>
     {
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsPending;
         public PackageInfo() { }
         [System.ComponentModel.Description("The unique identifier for a package")]
         public required string Id { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string? PendingId { get; set; }
         [System.ComponentModel.Description("The total number of downloads for the package across all versions")]
         public int TotalDownloads { get; init; }
         [System.ComponentModel.Description("The collection of available versions for a package, including related metadata su" +
@@ -108,7 +131,12 @@ namespace HttpApiDemo
                 "Id",
                 "Description"})]
         public System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList() { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Completed",
+                "Id"})]
+        public System.Threading.Tasks.Task<System.ValueTuple<HttpApiDemo.UploadStatus, string?>> GetUploadStatus(string pendingId) { }
         public System.Threading.Tasks.Task<bool> PatchPackage(string packageId, int? totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo>? versions) { }
+        public System.Threading.Tasks.Task<string> UploadPackage(string body) { }
         public System.Threading.Tasks.Task<bool> UpsertPackage(string packageId, int totalDownloads, System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> versions) { }
     }
     public class PackageResponse : System.IEquatable<HttpApiDemo.PackageResponse>
@@ -166,6 +194,12 @@ namespace HttpApiDemo
         public required int TotalDownloads { get; init; }
         [System.ComponentModel.Description("The versions that belong to this package registration")]
         public required System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> Versions { get; init; }
+    }
+    public enum UploadStatus
+    {
+        NotFound = 0,
+        InProgress = 1,
+        Completed = 2,
     }
     public class VersionDetails : System.IEquatable<HttpApiDemo.VersionDetails>
     {

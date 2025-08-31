@@ -232,14 +232,13 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
             });
         }
 
-        bool created = await packageProvider.UpsertPackage(packageId, request.TotalDownloads,
-            request.Versions ?? Array.Empty<VersionInfo>());
+        bool created = await packageProvider.UpsertPackage(packageId, request.TotalDownloads, request.Versions);
 
         PackageInfo? package = await packageProvider.FindPackageInfo(packageId);
         var response = new PackageWithVersionDetailsResponse
         {
             Id = packageId,
-            Versions = (package?.Versions ?? (request.Versions ?? Array.Empty<VersionInfo>())).Select(v => new VersionDetails
+            Versions = (package?.Versions ?? (request.Versions ?? [])).Select(v => new VersionDetails
             {
                 Version = v.Version,
                 Description = v.Description,
@@ -339,5 +338,70 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         string packageId)
     {
         return Task.FromResult<IActionResult>(NotFound("This endpoint is deprecated."));
+    }
+
+    [EndpointSummary("Upload package data")]
+    [EndpointDescription("")]
+    [HttpPost]
+    [Route("")]
+    [MapToApiVersion("2.0")]
+    [ApiExplorerSettings(GroupName = "private")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadPackage()
+    {
+        var body = await new StreamReader(Request.Body).ReadToEndAsync();
+
+        string pendingId = await packageProvider.UploadPackage(body);
+
+        // Check if the current request path contains a version segment
+        string requestPath = Request.Path.Value ?? "";
+        if (requestPath.Contains("/v"))
+        {
+            // Keep the version in the route
+            Response.Headers.Location = requestPath.TrimEnd('/') + $"/status/{pendingId}";
+        }
+        else
+        {
+            // Add the version to the query parameter
+            var baseUrl = Request.Path.Value?.TrimEnd('/') ?? "/api/packages";
+            Response.Headers.Location = $"{baseUrl}/status/{pendingId}?version=2.0";
+        }
+
+        return Accepted();
+    }
+
+    [EndpointSummary("Check the status of a pending upload")]
+    [EndpointDescription("")]
+    [HttpGet]
+    [Route("status/{pendingId}")]
+    [MapToApiVersion("2.0")]
+    [ApiExplorerSettings(GroupName = "private")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetUploadStatus(string pendingId)
+    {
+        Response.Headers.CacheControl = new CacheControlHeaderValue
+        {
+            NoCache = true
+        }.ToString();
+
+        (UploadStatus status, string? id) = await packageProvider.GetUploadStatus(pendingId);
+        if (status == UploadStatus.NotFound)
+        {
+            return NotFound($"No pending upload with {pendingId} was found");
+        }
+
+        if (status == UploadStatus.InProgress)
+        {
+            return Ok(new
+            {
+               Status = "InProgress",
+            });
+        }
+
+        string? packageLocation = Url.Action(nameof(GetPackageByIdV2), new { packageId = id });
+
+        return Created(packageLocation, null);
     }
 }

@@ -13,9 +13,12 @@ internal static class SwaggerGenerationExtensions
         builder.Services.AddApiVersioning(options =>
             {
                 options.ReportApiVersions = true;
-                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.DefaultApiVersion = new ApiVersion(2, 0);
                 options.AssumeDefaultVersionWhenUnspecified = true;
                 options.UnsupportedApiVersionStatusCode = 404; // NotFound
+                options.ApiVersionReader = ApiVersionReader.Combine(
+                    new UrlSegmentApiVersionReader(),
+                    new QueryStringApiVersionReader("api-version"));
             })
             .AddApiExplorer(options =>
             {

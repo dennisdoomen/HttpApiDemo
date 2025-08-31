@@ -1,4 +1,6 @@
+using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -94,5 +96,67 @@ public class HttpApiDemoSpecs(CustomWebApplicationFactory httpFactory) : IClassF
         });
     }
 
-}
+    [Fact]
+    public async Task Can_upload_package_and_track_status_to_completion()
+    {
+        // Arrange
+        var client = httpFactory.CreateClient();
+        var packageData = """
+                          {
+                              "Id": "TestPackage",
+                              "Versions": [
+                                  {
+                                      "Version": "1.0.0",
+                                      "Description": "Test package description",
+                                      "RepositoryUrl": "https://github.com/test/package",
+                                      "Owner": "testowner"
+                                  }
+                              ]
+                          }
+                          """;
 
+        // Upload package
+        HttpResponseMessage uploadResponse = await client.PostAsync("api/v2/packages",
+            new StringContent(packageData, Encoding.UTF8, "application/json"));
+
+        uploadResponse.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        uploadResponse.Headers.Location.Should().NotBeNull();
+
+        string statusUrl = uploadResponse.Headers.Location!.ToString();
+        statusUrl.Should().Contain("/status/");
+
+        // Use the status link to get the status (first call returns InProgress and marks completion)
+        HttpResponseMessage statusResponse = await client.GetAsync(statusUrl);
+        statusResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        string statusBody = await statusResponse.Content.ReadAsStringAsync();
+        statusBody.Should().Contain("InProgres");
+
+        // After the first status check, the package should now be available (the repository implementation
+        // marks the package as completed after the first status check, clearing the PendingId)
+        statusResponse = await client.GetAsync(statusUrl);
+        statusResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        string packageUrl = statusResponse.Headers.Location?.ToString();
+        packageUrl.Should().ContainEquivalentOf("TestPackage");
+
+        // Package information is returned correctly
+        HttpResponseMessage packageResponse = await client.GetAsync(packageUrl);
+        packageResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await packageResponse.Should().BeEquivalentTo(new
+        {
+            Id = "TestPackage",
+            Versions = new[]
+            {
+                new
+                {
+                    Version = "1.0.0",
+                    Description = "Test package description",
+                    RepositoryUrl = "https://github.com/test/package",
+                    Owner = "testowner"
+                }
+            }
+        });
+    }
+}

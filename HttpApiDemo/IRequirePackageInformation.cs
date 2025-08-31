@@ -45,4 +45,24 @@ public interface IRequirePackageInformation
     /// <param name="packageId">The package to delete.</param>
     /// <returns><c>true</c> if it existed and was deleted; otherwise <c>false</c>.</returns>
     Task<bool> DeletePackage(string packageId);
+
+    /// <summary>
+    /// Uploads the package with the contents represented by <paramref name="body"/>to the repository.
+    /// </summary>
+    /// <returns>A temporary ID that can be used with <see cref="GetUploadStatus"/> to determine whether the
+    /// new package had been processed already.</returns>
+    Task<string> UploadPackage(string body);
+
+    /// <summary>
+    /// Retrieves the status of the package upload identified by <paramref name="pendingId"/>.
+    /// </summary>
+    /// <param name="pendingId">The temporary ID returned by <see cref="UploadPackage"/></param>
+    Task<(UploadStatus Completed, string? Id)> GetUploadStatus(string pendingId);
+}
+
+public enum UploadStatus
+{
+    NotFound,
+    InProgress,
+    Completed
 }

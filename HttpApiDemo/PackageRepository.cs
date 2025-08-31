@@ -1,47 +1,51 @@
-namespace HttpApiDemo;
-
 using System.Collections.Concurrent;
+using System.Text.Json;
+
+namespace HttpApiDemo;
 
 public class PackageRepository : IRequirePackageInformation
 {
-    private readonly ConcurrentDictionary<string, PackageInfo> _packages = new(StringComparer.CurrentCultureIgnoreCase);
+    private readonly ConcurrentDictionary<string, PackageInfo> packages =
+        new(StringComparer.CurrentCultureIgnoreCase);
 
     public PackageRepository()
     {
         // Seed initial data
         foreach (var p in examplePackages)
         {
-            _packages[p.Id] = p;
+            packages[p.Id] = p;
         }
     }
 
     public Task<PackageInfo?> FindPackageInfo(string packageId)
     {
-        _packages.TryGetValue(packageId, out var pkg);
-        return Task.FromResult(pkg);
+        packages.TryGetValue(packageId, out var package);
+        return Task.FromResult(package?.IsPending is true ? null : package);
     }
 
     public Task<IEnumerable<(string Id, string Description)>> GetPackageList() => Task.FromResult(
-        _packages.Values
+        packages.Values
+            .Where(x => !x.IsPending)
             .Select(x => (x.Id, x.Versions.FirstOrDefault()?.Description ?? string.Empty))
             .AsEnumerable());
 
     public Task<bool> UpsertPackage(string packageId, int totalDownloads, IEnumerable<VersionInfo> versions)
     {
-        var created = !_packages.ContainsKey(packageId);
+        var created = !packages.ContainsKey(packageId);
         var normalized = new PackageInfo
         {
             Id = packageId,
             TotalDownloads = totalDownloads,
             Versions = versions?.ToArray() ?? Array.Empty<VersionInfo>()
         };
-        _packages.AddOrUpdate(packageId, _ => normalized, (_, _) => normalized);
+
+        packages.AddOrUpdate(packageId, _ => normalized, (_, _) => normalized);
         return Task.FromResult(created);
     }
 
     public Task<bool> PatchPackage(string packageId, int? totalDownloads, IEnumerable<VersionInfo>? versions)
     {
-        if (!_packages.TryGetValue(packageId, out var existing))
+        if (!packages.TryGetValue(packageId, out var existing))
         {
             return Task.FromResult(false);
         }
@@ -53,13 +57,77 @@ public class PackageRepository : IRequirePackageInformation
             Versions = versions?.ToArray() ?? existing.Versions
         };
 
-        _packages[packageId] = updated;
+        packages[packageId] = updated;
         return Task.FromResult(true);
     }
 
     public Task<bool> DeletePackage(string packageId)
     {
-        return Task.FromResult(_packages.TryRemove(packageId, out _));
+        return Task.FromResult(packages.TryRemove(packageId, out _));
+    }
+
+    public Task<string> UploadPackage(string body)
+    {
+        // We pretend that the body is being uploaded to a package repository and that this takes
+        // a while. For this demo, we parse the complete package data.
+        var newPackage = JsonSerializer.Deserialize<NewPackageWithVersions>(body, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        if (newPackage is null)
+        {
+            throw new ArgumentException("The body does not contain a valid package");
+        }
+
+        string pendingId = (packages.Count + 1).ToString();
+
+        // Convert versions to VersionInfo format
+        var versions = newPackage.Versions?.Select(v => new VersionInfo
+        {
+            Version = v.Version ?? "",
+            Description = v.Description ?? "",
+            RepositoryUrl = v.RepositoryUrl ?? "",
+            Owner = v.Owner ?? "",
+            Readme = "",
+            LicenseUrl = "",
+            License = "",
+            ProjectUrl = "",
+            IconUrl = ""
+        }).ToArray() ?? Array.Empty<VersionInfo>();
+
+        packages.TryAdd(newPackage.Id, new PackageInfo
+        {
+            Id = newPackage.Id,
+            IsPending = true,
+            PendingId = pendingId,
+            Versions = versions
+        });
+
+        return Task.FromResult(pendingId);
+    }
+
+    public Task<(UploadStatus Completed, string? Id)> GetUploadStatus(string pendingId)
+    {
+        PackageInfo? package = packages.Values.FirstOrDefault(p => p.PendingId == pendingId);
+        if (package is null)
+        {
+            return Task.FromResult<(UploadStatus, string?)>((UploadStatus.NotFound, null));
+        }
+
+        if (package.IsPending)
+        {
+            // Pretend that the processing of the package has completed after the first time
+            // somebody requests a status update.
+            package.IsPending = false;
+
+            return Task.FromResult<(UploadStatus, string?)>((UploadStatus.InProgress, null));
+        }
+        else
+        {
+            package.PendingId = null;
+            return Task.FromResult<(UploadStatus, string?)>((UploadStatus.Completed, package.Id));
+        }
     }
 
     // Initial seed data (unchanged)
@@ -199,4 +267,8 @@ public class PackageRepository : IRequirePackageInformation
             }
         }
     ];
+
+    private record NewPackageWithVersions(string Id, VersionSummary[]? Versions);
+
+    private record VersionSummary(string? Version, string? Description, string? RepositoryUrl, string? Owner);
 }
