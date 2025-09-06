@@ -81,8 +81,3 @@ public record PackageStatistics
     public required int TotalDownloads { get; init; }
 }
 
-public record ErrorResponse
-{
-    [Description("The error message describing what went wrong")]
-    public required string Error { get; init; }
-}

@@ -3,12 +3,6 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("HttpApiDemo.Specs")]
 namespace HttpApiDemo
 {
-    public class ErrorResponse : System.IEquatable<HttpApiDemo.ErrorResponse>
-    {
-        public ErrorResponse() { }
-        [System.ComponentModel.Description("The error message describing what went wrong")]
-        public required string Error { get; init; }
-    }
     public interface IRequirePackageInformation
     {
         System.Threading.Tasks.Task<bool> DeletePackage(string packageId);
@@ -43,16 +37,16 @@ namespace HttpApiDemo
         [Asp.Versioning.MapToApiVersion("1.0")]
         [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="internal")]
         [Microsoft.AspNetCore.Mvc.HttpGet]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionSummaryResponse), 200)]
         [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackageByIdV1([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
         [Asp.Versioning.MapToApiVersion("2.0")]
         [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="internal")]
         [Microsoft.AspNetCore.Mvc.HttpGet]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 200)]
         [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackageByIdV2([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
@@ -71,8 +65,8 @@ namespace HttpApiDemo
         [Asp.Versioning.MapToApiVersion("2.0")]
         [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
         [Microsoft.AspNetCore.Mvc.HttpGet]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageStatistics), 200)]
         [Microsoft.AspNetCore.Mvc.Route("{packageId}/statistics")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetStatistics([System.ComponentModel.Description("The unique identifier of the package")] string packageId) { }
@@ -87,14 +81,14 @@ namespace HttpApiDemo
         [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
         [Microsoft.AspNetCore.Mvc.HttpPatch]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(204)]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
         [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
         public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> PatchPackage([System.ComponentModel.Description("The unique identifier of the package")] string packageId, [Microsoft.AspNetCore.Mvc.FromBody] HttpApiDemo.PatchPackageRequest? request) { }
         [Asp.Versioning.MapToApiVersion("2.0")]
         [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
         [Microsoft.AspNetCore.Mvc.HttpPut]
-        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.ErrorResponse), 400)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(400)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 200)]
         [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageWithVersionDetailsResponse), 201)]
         [Microsoft.AspNetCore.Mvc.Route("{packageId}")]

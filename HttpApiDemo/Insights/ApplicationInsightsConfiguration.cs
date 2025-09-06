@@ -38,7 +38,7 @@ internal static class ApplicationInsightsConfiguration
                 // Enable logging to the Application Insights service.
                 loggingBuilder.AddApplicationInsights(
                     configureTelemetryConfiguration: config => config.ConnectionString = connectionString,
-                    configureApplicationInsightsLoggerOptions: options => { }
+                    configureApplicationInsightsLoggerOptions: _ => { }
                 );
             }
         });
@@ -47,7 +47,6 @@ internal static class ApplicationInsightsConfiguration
         // Otherwise use the `FullName` of the T in ILogger<T>
         builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Information);
 
-        // TODO: Add Oracle connection logging to Application Insights
         return builder;
     }
 }

@@ -53,8 +53,8 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [MapToApiVersion("1.0")]
     [ApiExplorerSettings(GroupName = "internal")]
     [ProducesResponseType(typeof(PackageWithVersionSummaryResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPackageByIdV1([Description("The unique identifier of the package")] string packageId)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -67,7 +67,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (string.IsNullOrWhiteSpace(packageId))
         {
             logger.LogWarning("A non-empty package ID is required");
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A non-empty package ID is required"
             });
@@ -77,7 +77,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (package is null)
         {
             logger.LogWarning("Could not find a package with ID {packageId}", packageId);
-            return NotFound(new ErrorResponse
+            return NotFound(new
             {
                 Error = $"Could not find a package with ID {packageId}"
             });
@@ -106,8 +106,8 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [MapToApiVersion("2.0")]
     [ApiExplorerSettings(GroupName = "internal")]
     [ProducesResponseType(typeof(PackageWithVersionDetailsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPackageByIdV2([Description("The unique identifier of the package")] string packageId)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -120,17 +120,20 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (string.IsNullOrWhiteSpace(packageId))
         {
             logger.LogWarning("A non-empty package ID is required");
-            return BadRequest(new ErrorResponse
-            {
-                Error = "A non-empty package ID is required"
-            });
+
+            return Problem(
+                type: "Bad Request",
+                title: "A non-empty package ID is required",
+                detail: "The package ID was null or contained only whitespace",
+                statusCode: 400
+            );
         }
 
         PackageInfo? package = await packageProvider.FindPackageInfo(packageId);
         if (package is null)
         {
             logger.LogWarning("Could not find a package with ID {packageId}", packageId);
-            return NotFound(new ErrorResponse
+            return NotFound(new
             {
                 Error = $"Could not find a package with ID {packageId}"
             });
@@ -163,8 +166,8 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [ApiExplorerSettings(GroupName = "private")]
     [MapToApiVersion("2.0")]
     [ProducesResponseType(typeof(PackageStatistics), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetStatistics([Description("The unique identifier of the package")] string packageId)
     {
         Response.Headers.Expires = DateTime.UtcNow.Date.Add(new TimeSpan(0, 59, 00)).ToString("R");
@@ -178,7 +181,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (string.IsNullOrWhiteSpace(packageId))
         {
             logger.LogWarning("A non-empty package ID is required");
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A non-empty package ID is required"
             });
@@ -188,7 +191,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         if (package is null)
         {
             logger.LogWarning("Could not find a package with ID {packageId}", packageId);
-            return NotFound(new ErrorResponse
+            return NotFound(new
             {
                 Error = $"Could not find a package with ID {packageId}"
             });
@@ -212,13 +215,13 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [ApiExplorerSettings(GroupName = "private")]
     [ProducesResponseType(typeof(PackageWithVersionDetailsResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(PackageWithVersionDetailsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PutPackage([Description("The unique identifier of the package")] string packageId,
         [FromBody] PutPackageRequest? request)
     {
         if (string.IsNullOrWhiteSpace(packageId))
         {
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A non-empty package ID is required"
             });
@@ -226,7 +229,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
 
         if (request is null)
         {
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A request body is required"
             });
@@ -270,8 +273,8 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     [MapToApiVersion("2.0")]
     [ApiExplorerSettings(GroupName = "private")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PatchPackage(
         [Description("The unique identifier of the package")]
         string packageId,
@@ -279,7 +282,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     {
         if (string.IsNullOrWhiteSpace(packageId))
         {
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A non-empty package ID is required"
             });
@@ -287,7 +290,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
 
         if (request is null)
         {
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A request body is required"
             });
@@ -295,7 +298,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
 
         if (!await packageProvider.PatchPackage(packageId, request.TotalDownloads, request.Versions))
         {
-            return NotFound(new ErrorResponse
+            return NotFound(new
             {
                 Error = $"Could not find a package with ID {packageId}"
             });
@@ -316,7 +319,7 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
     {
         if (string.IsNullOrWhiteSpace(packageId))
         {
-            return BadRequest(new ErrorResponse
+            return BadRequest(new
             {
                 Error = "A non-empty package ID is required"
             });
@@ -403,5 +406,15 @@ public class PackageController(IRequirePackageInformation packageProvider, ILogg
         string? packageLocation = Url.Action(nameof(GetPackageByIdV2), new { packageId = id });
 
         return Created(packageLocation, null);
+    }
+
+    [HttpGet]
+    [Route("throw")]
+    [MapToApiVersion("2.0")]
+    [ApiExplorerSettings(GroupName = "private")]
+    public void Throw()
+    {
+        // This is only intercepted if you've used "app.UseExceptionHandler();" in the program.cs
+        throw new NullReferenceException();
     }
 }

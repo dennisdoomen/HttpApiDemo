@@ -54,6 +54,10 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ErrorHandling\" />
+  </ItemGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <DocumentationFile>bin\Debug\HttpApiDemo.xml</DocumentationFile>
     </PropertyGroup>
