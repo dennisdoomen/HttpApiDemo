@@ -22,12 +22,6 @@ public class Program
         // Enable a /health endpoint to check the health of the application.
         builder.Services.AddHealthChecking(builder.Configuration);
 
-        // Debugging with app insights is not required.
-        if (!builder.Environment.IsDevelopment() && builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString") != null)
-        {
-            builder.AddAppInsights(builder.Configuration);
-        }
-
         // Allow other domains to access this endpoint as well.
         builder.AddCorsPolicy(builder.Configuration);
 
