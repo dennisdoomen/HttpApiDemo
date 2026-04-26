@@ -1,7 +1,7 @@
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 namespace HttpApiDemo.Infrastructure;
@@ -59,7 +59,7 @@ internal static class SwaggerGenerationExtensions
                 options.AddOperationTransformer((operation, context, _) =>
                 {
                     var apiDescription = context.Description;
-                    operation.Deprecated = apiDescription.IsDeprecated();
+                    operation.Deprecated = apiDescription.IsDeprecated;
                     return Task.CompletedTask;
                 });
 
@@ -78,7 +78,7 @@ internal static class SwaggerGenerationExtensions
         {
             options
                 .WithTitle("v1 Penguins API")
-                .WithTheme(ScalarTheme.DeepSpace)
+                .WithTheme(ScalarTheme.BluePlanet)
                 .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
 
             var descriptions = app.DescribeApiVersions();
