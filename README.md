@@ -11,7 +11,7 @@
 
 <div align="center">
 
-[![](https://img.shields.io/github/actions/workflow/status/dennisdoomen/HttpApiDemo/build.yml?branch=main)](https://github.com/dennisdoomen/HttpApiDemo/actions?query=branch%3amain)
+[![](https://img.shields.io/github/actions/workflow/status/dennisdoomen/HttpApiDemo/build.yml?branch=use-scalar)](https://github.com/dennisdoomen/HttpApiDemo/actions?query=branch%3Ause-scalar)
 [![](https://img.shields.io/github/last-commit/dennisdoomen/HttpApiDemo)](https://github.com/dennisdoomen/HttpApiDemo)
 [![GitHub contributors](https://img.shields.io/github/contributors/dennisdoomen/HttpApiDemo)](https://github.com/dennisdoomen/HttpApiDemo/graphs/contributors)
 [![open issues](https://img.shields.io/github/issues/dennisdoomen/HttpApiDemo)](https://github.com/dennisdoomen/HttpApiDemo/issues)
