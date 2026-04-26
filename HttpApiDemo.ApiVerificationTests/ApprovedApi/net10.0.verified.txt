@@ -1,0 +1,90 @@
+﻿namespace HttpApiDemo
+{
+    public interface IRequirePackageInformation
+    {
+        System.Threading.Tasks.Task<HttpApiDemo.PackageInfo?> FindPackageInfo(string packageId);
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Id",
+                "Description"})]
+        System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList();
+    }
+    [Asp.Versioning.ApiVersion("1.0", Deprecated=true)]
+    [Asp.Versioning.ApiVersion("2.0")]
+    [Microsoft.AspNetCore.Mvc.ApiController]
+    [Microsoft.AspNetCore.Mvc.Produces("application/json", new string[0])]
+    [Microsoft.AspNetCore.Mvc.Route("api/packages/")]
+    [Microsoft.AspNetCore.Mvc.Route("api/v{version:apiVersion}/packages/")]
+    public class PackageController : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        public PackageController(HttpApiDemo.IRequirePackageInformation packageProvider, Microsoft.Extensions.Logging.ILogger<HttpApiDemo.PackageController> logger) { }
+        [Asp.Versioning.MapToApiVersion("1.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="internal")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(422)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageInfo), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackageByIdV1(string packageId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="internal")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(422)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageInfo), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackageByIdV2(string packageId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="public")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(200)]
+        [Microsoft.AspNetCore.Mvc.Route("")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackages() { }
+        [Asp.Versioning.MapToApiVersion("1.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="public")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.Route("")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetPackages([Microsoft.AspNetCore.Mvc.FromQuery] string packageId) { }
+        [Asp.Versioning.MapToApiVersion("2.0")]
+        [Microsoft.AspNetCore.Mvc.ApiExplorerSettings(GroupName="private")]
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(404)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(422)]
+        [Microsoft.AspNetCore.Mvc.ProducesResponseType(typeof(HttpApiDemo.PackageInfo), 200)]
+        [Microsoft.AspNetCore.Mvc.Route("{packageId}/statistics")]
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetStatistics(string packageId) { }
+    }
+    public class PackageInfo : System.IEquatable<HttpApiDemo.PackageInfo>
+    {
+        public PackageInfo() { }
+        public required string Id { get; init; }
+        public int TotalDownloads { get; init; }
+        public System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> Versions { get; init; }
+    }
+    public class PackageRepository : HttpApiDemo.IRequirePackageInformation
+    {
+        public PackageRepository() { }
+        public System.Threading.Tasks.Task<HttpApiDemo.PackageInfo?> FindPackageInfo(string packageId) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Id",
+                "Description"})]
+        public System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList() { }
+    }
+    public class Program
+    {
+        public Program() { }
+        public static void Main(string[] args) { }
+    }
+    public class VersionInfo : System.IEquatable<HttpApiDemo.VersionInfo>
+    {
+        public VersionInfo() { }
+        public required string Description { get; init; }
+        public required string IconUrl { get; init; }
+        public required string License { get; init; }
+        public required string LicenseUrl { get; init; }
+        public required string Owner { get; set; }
+        public required string ProjectUrl { get; init; }
+        public required string Readme { get; init; }
+        public required string RepositoryUrl { get; init; }
+        public required string Version { get; init; }
+    }
+}
