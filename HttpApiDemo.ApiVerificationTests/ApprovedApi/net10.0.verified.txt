@@ -1,0 +1,45 @@
+﻿namespace HttpApiDemo
+{
+    public interface IRequirePackageInformation
+    {
+        System.Threading.Tasks.Task<HttpApiDemo.PackageInfo?> FindPackageInfo(string packageId);
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Id",
+                "Description"})]
+        System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList();
+    }
+    public class PackageInfo : System.IEquatable<HttpApiDemo.PackageInfo>
+    {
+        public PackageInfo() { }
+        public required string Id { get; init; }
+        public int TotalDownloads { get; init; }
+        public System.Collections.Generic.IEnumerable<HttpApiDemo.VersionInfo> Versions { get; init; }
+    }
+    public class PackageRepository : HttpApiDemo.IRequirePackageInformation
+    {
+        public PackageRepository() { }
+        public System.Threading.Tasks.Task<HttpApiDemo.PackageInfo?> FindPackageInfo(string packageId) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Id",
+                "Description"})]
+        public System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>>> GetPackageList() { }
+    }
+    public class Program
+    {
+        public Program() { }
+        public static void Main(string[] args) { }
+    }
+    public class VersionInfo : System.IEquatable<HttpApiDemo.VersionInfo>
+    {
+        public VersionInfo() { }
+        public required string Description { get; init; }
+        public required string IconUrl { get; init; }
+        public required string License { get; init; }
+        public required string LicenseUrl { get; init; }
+        public required string Owner { get; set; }
+        public required string ProjectUrl { get; init; }
+        public required string Readme { get; init; }
+        public required string RepositoryUrl { get; init; }
+        public required string Version { get; init; }
+    }
+}

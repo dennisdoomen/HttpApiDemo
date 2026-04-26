@@ -1,6 +1,6 @@
 using Asp.Versioning;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
@@ -88,30 +88,10 @@ internal static class SwaggerGenerationExtensions
 
     private static void AddSecurityRequirements(SwaggerGenOptions options)
     {
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
         {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Basic"
-                    }
-                },
-                []
-            },
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                []
-            }
+            { new OpenApiSecuritySchemeReference("Basic"), [] },
+            { new OpenApiSecuritySchemeReference("Bearer"), [] }
         });
     }
 }

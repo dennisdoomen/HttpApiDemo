@@ -1,8 +1,9 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
@@ -17,7 +18,7 @@ internal sealed class ApplySwashbuckleWorkaroundsFilter : IOperationFilter
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
         ApiDescription? apiDescription = context.ApiDescription;
-        operation.Deprecated |= apiDescription.IsDeprecated();
+        operation.Deprecated |= apiDescription.IsDeprecated;
 
         EnsureAllResponsesMatchSupportedContentTypes(operation, context);
 
@@ -30,13 +31,22 @@ internal sealed class ApplySwashbuckleWorkaroundsFilter : IOperationFilter
     private static void EnsureAllResponsesMatchSupportedContentTypes(OpenApiOperation operation, OperationFilterContext context)
     {
         // REF: https://github.com/domaindrivendev/Swashbuckle.AspNetCore/issues/1752#issue-663991077
+        if (operation.Responses is null)
+        {
+            return;
+        }
+
         foreach (ApiResponseType responseType in context.ApiDescription.SupportedResponseTypes)
         {
             // REF: https://github.com/domaindrivendev/Swashbuckle.AspNetCore/blob/b7cf75e7905050305b115dd96640ddd6e74c7ac9/src/Swashbuckle.AspNetCore.SwaggerGen/SwaggerGenerator/SwaggerGenerator.cs#L383-L387
             string responseKey = responseType.IsDefaultResponse ? "default" : responseType.StatusCode.ToString();
-            OpenApiResponse? response = operation.Responses[responseKey];
 
-            foreach (string? contentType in response.Content.Keys)
+            if (!operation.Responses.TryGetValue(responseKey, out IOpenApiResponse? response) || response?.Content is null)
+            {
+                continue;
+            }
+
+            foreach (string? contentType in response.Content.Keys.ToList())
             {
                 if (responseType.ApiResponseFormats.All(format => format.MediaType != contentType))
                 {
@@ -62,18 +72,25 @@ internal sealed class ApplySwashbuckleWorkaroundsFilter : IOperationFilter
 
         foreach (OpenApiParameter? parameter in operation.Parameters)
         {
-            ApiParameterDescription description = apiDescription.ParameterDescriptions.First(description => description.Name == parameter.Name);
+            if (parameter is null)
+            {
+                continue;
+            }
+
+            ApiParameterDescription description = apiDescription.ParameterDescriptions
+                .First(d => string.Equals(d.Name, parameter.Name, StringComparison.Ordinal));
 
             parameter.Description ??= description.ModelMetadata?.Description;
 
-            if (parameter.Schema.Default == null &&
+            if (parameter.Schema is OpenApiSchema schema &&
+                schema.Default == null &&
                 description.DefaultValue != null &&
                 description.DefaultValue is not DBNull &&
                 description.ModelMetadata is ModelMetadata modelMetadata)
             {
                 // REF: https://github.com/Microsoft/aspnet-api-versioning/issues/429#issuecomment-605402330
                 string json = JsonSerializer.Serialize(description.DefaultValue, modelMetadata.ModelType);
-                parameter.Schema.Default = OpenApiAnyFactory.CreateFromJson(json);
+                schema.Default = JsonNode.Parse(json);
             }
 
             parameter.Required |= description.IsRequired;

@@ -92,7 +92,6 @@ public class Program
             .WithGroupName("public")
             .WithName("GetPackagesMinimal")
             .WithSummary("Retrieves a list of packages available for download using Minimal API")
-            .WithOpenApi()
             .Produces<object[]>(StatusCodes.Status200OK);
 
         // GET /api/packages/{id} (v1.0) - Returns package details (limited info)
@@ -102,7 +101,6 @@ public class Program
             .WithGroupName("internal")
             .WithName("GetPackageByIdV1Minimal")
             .WithSummary("Retrieves package information with limited details using Minimal API (v1.0)")
-            .WithOpenApi()
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<object>(StatusCodes.Status404NotFound)
             .Produces<object>(StatusCodes.Status400BadRequest);
@@ -114,7 +112,6 @@ public class Program
             .WithGroupName("internal")
             .WithName("GetPackageByIdV2Minimal")
             .WithSummary("Retrieves package information with full details using Minimal API (v2.0)")
-            .WithOpenApi()
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<object>(StatusCodes.Status404NotFound)
             .Produces<object>(StatusCodes.Status400BadRequest);
@@ -126,7 +123,6 @@ public class Program
             .WithGroupName("private")
             .WithName("GetStatisticsMinimal")
             .WithSummary("Retrieves package statistics using Minimal API")
-            .WithOpenApi()
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<object>(StatusCodes.Status404NotFound)
             .Produces<object>(StatusCodes.Status400BadRequest);
@@ -138,7 +134,6 @@ public class Program
             .WithGroupName("public")
             .WithName("GetPackagesById")
             .WithSummary("Retrieves package statistics using Minimal API")
-            .WithOpenApi()
             .Produces<object>(StatusCodes.Status200OK)
             .Produces<object>(StatusCodes.Status404NotFound)
             .Produces<object>(StatusCodes.Status400BadRequest);

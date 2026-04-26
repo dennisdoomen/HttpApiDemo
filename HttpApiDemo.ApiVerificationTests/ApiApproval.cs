@@ -30,7 +30,7 @@ public class ApiApproval
         var configuration = typeof(ApiApproval).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()!.Configuration;
         var assemblyFile = SourcePath / "HttpApiDemo" / "bin" / configuration / framework / "HttpApiDemo.dll";
         var assembly = Assembly.LoadFile(assemblyFile);
-        var publicApi = assembly.GeneratePublicApi(options: null);
+        var publicApi = assembly.GeneratePublicApi(new ApiGeneratorOptions { IncludeAssemblyAttributes = false });
 
         return Verifier
             .Verify(publicApi)
@@ -46,7 +46,9 @@ public class ApiApproval
         {
             var csproj = SourcePath / "HttpApiDemo" / "HttpApiDemo.csproj";
             var project = XDocument.Load(csproj);
-            var targetFrameworks = project.XPathSelectElement("/Project/PropertyGroup/TargetFrameworks");
+            var targetFrameworks =
+                project.XPathSelectElement("/Project/PropertyGroup/TargetFrameworks") ??
+                project.XPathSelectElement("/Project/PropertyGroup/TargetFramework");
             AddRange(targetFrameworks!.Value.Split(';'));
         }
     }
