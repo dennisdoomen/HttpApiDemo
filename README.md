@@ -1,6 +1,6 @@
 
 > [!NOTE]
-> This is the `use-swashbuckle` feature branch. For the main documentation, see the [README on the default branch](https://github.com/dennisdoomen/HttpApiDemo/blob/main/README.md).
+> You're viewing the `use-swashbuckle` branch. For the main documentation, see the [README on the `main` branch](https://github.com/dennisdoomen/HttpApiDemo/blob/main/README.md).
 
 <h1 align="center">
   <br>
