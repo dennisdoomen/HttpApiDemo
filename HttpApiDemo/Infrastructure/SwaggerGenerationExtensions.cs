@@ -60,6 +60,25 @@ internal static class SwaggerGenerationExtensions
                     options.DocumentTitle = name;
                 });
             }
+
+            // Redirect the root to the API docs index page
+            app.MapGet("/", () => Results.Redirect("/api-docs/index.html"));
+
+            // Serve a simple index page listing all available API versions
+            var links = sortedDescriptions
+                .Select(d => $"<li><a href='/api-docs/{d.GroupName}'>{d.GroupName}</a></li>");
+
+            app.MapGet("/api-docs/index.html", () => Results.Content(
+                $"""
+                <!DOCTYPE html>
+                <html>
+                <head><title>API Documentation</title></head>
+                <body>
+                  <h1>API Documentation</h1>
+                  <ul>{string.Join("", links)}</ul>
+                </body>
+                </html>
+                """, "text/html"));
     }
 
     private static void AddSecurityDefinitions(SwaggerGenOptions options)
