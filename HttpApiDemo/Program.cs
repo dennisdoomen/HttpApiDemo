@@ -52,6 +52,7 @@ public class Program
 
         var app = builder.Build();
 
+        app.MapGet("/", () => Results.Redirect("/api-docs")).ExcludeFromDescription();
         app.UseSwaggerUi();
         app.UseHttpsRedirection();
         app.UseRouting();

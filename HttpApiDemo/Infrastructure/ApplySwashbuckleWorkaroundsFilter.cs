@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Asp.Versioning;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -18,7 +19,10 @@ internal sealed class ApplySwashbuckleWorkaroundsFilter : IOperationFilter
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
         ApiDescription? apiDescription = context.ApiDescription;
-        operation.Deprecated |= apiDescription.ActionDescriptor.EndpointMetadata.OfType<ObsoleteAttribute>().Any();
+        operation.Deprecated |= apiDescription.CustomAttributes().OfType<ObsoleteAttribute>().Any()
+            || (apiDescription.ActionDescriptor.Properties.TryGetValue(typeof(ApiVersionModel), out var obj)
+                && obj is ApiVersionModel model
+                && model.DeprecatedApiVersions.Any());
 
         EnsureAllResponsesMatchSupportedContentTypes(operation, context);
 
