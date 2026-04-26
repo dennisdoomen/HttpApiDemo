@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -13,16 +13,16 @@ namespace HttpApiDemo.Infrastructure;
 /// Applies workaround for know Swashbuckle issues and limitations.
 /// </summary>
 [UsedImplicitly]
-internal sealed class ApplySwashbuckleWorkaroundsFilter : IOperationFilter
+internal sealed class ApplySwashbuckleWorkaroundsFilter(IApiVersionDescriptionProvider versionDescriptions) : IOperationFilter
 {
     /// <inheritdoc />
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
         ApiDescription? apiDescription = context.ApiDescription;
+
         operation.Deprecated |= apiDescription.CustomAttributes().OfType<ObsoleteAttribute>().Any()
-            || (apiDescription.ActionDescriptor.Properties.TryGetValue(typeof(ApiVersionModel), out var obj)
-                && obj is ApiVersionModel model
-                && model.DeprecatedApiVersions.Any());
+            || versionDescriptions.ApiVersionDescriptions
+                .Any(d => d.GroupName == apiDescription.GroupName && d.IsDeprecated);
 
         EnsureAllResponsesMatchSupportedContentTypes(operation, context);
 
