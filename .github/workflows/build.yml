@@ -26,8 +26,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: |
-          3.0.x
-          6.0.x
+          10.0.x
 
     - name: Run NUKE
       run: ./build.ps1
@@ -39,14 +38,14 @@ jobs:
       id: check_files
       uses: andstor/file-existence-action@v3
       with:
-        files: "TestResults/reports/lcov.info"
+        files: "Artifacts/TestResults/reports/lcov.info"
 
     - name: coveralls
       uses: coverallsapp/github-action@v2
       if: steps.check_files.outputs.files_exists == 'true'
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        file: TestResults/reports/lcov.info
+        file: Artifacts/TestResults/reports/lcov.info
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v3
@@ -60,7 +59,7 @@ jobs:
         name: windows-artifacts
         path: |
           ./Artifacts/*
-          ./TestResults/*.trx
+          ./Artifacts/TestResults/*.trx
 
   publish-test-results:
     name: "Publish Tests Results"
