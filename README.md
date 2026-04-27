@@ -40,9 +40,9 @@ Patterns demonstrated across the project:
 * API versioning (URL path + query string) via `Asp.Versioning`, including a deprecated v1 alongside a current v2
 * Endpoint grouping (`public`, `internal`, `private`) surfaced as separate OpenAPI documents
 * Problem Details for error responses (`RFC 9457`)
-* Health check endpoint (`/health`) wired to Application Insights
+* Health check endpoint (`/health`)
+* OpenTelemetry tracing, metrics, and structured logging — OTLP exporter for production, console exporter for development
 * CORS configuration
-* Application Insights integration (non-development environments only)
 * Enum serialization to string names
 * API surface contract verification via snapshot tests (`PublicApiGenerator` + `Verify`)
 * Code coverage collection with Coverlet and HTML/lcov report generation
