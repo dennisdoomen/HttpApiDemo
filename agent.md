@@ -54,7 +54,7 @@ AcceptApiChanges.ps1 / .sh        Helper to accept updated API snapshots
 | Build automation | Nuke |
 | Versioning | GitVersion (Semantic Versioning) |
 | Static analysis | StyleCop, Roslynator, CSharpGuidelinesAnalyzer, Meziantou.Analyzer |
-| Observability | Application Insights (non-dev environments) |
+| OpenTelemetry | `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Instrumentation.AspNetCore`, `OpenTelemetry.Instrumentation.Http`, `OpenTelemetry.Instrumentation.Runtime`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `OpenTelemetry.Exporter.Console` |
 
 ## Key conventions
 
@@ -102,6 +102,8 @@ This runs the verification tests with `VERIFY_AUTOACCEPT=1` which overwrites the
 
 ## What to watch out for when making changes
 
+* **OpenTelemetry wiring** lives in `HttpApiDemo/Telemetry/OpenTelemetryConfiguration.cs`. It registers tracing (ASP.NET Core + HTTP client instrumentation), metrics (+ .NET runtime metrics), and OpenTelemetry logging. Set `OpenTelemetry:Endpoint` in configuration to enable the OTLP exporter; the console exporter is active automatically in `Development`.
+* **Health check** is a simple liveness check (`/health`). To add custom checks, extend `ServiceExtensions.AddHealthChecking` in `HealthChecking/ServiceExtensions.cs`.
 * **OpenAPI wiring** lives entirely in `HttpApiDemo/Infrastructure/SwaggerGenerationExtensions.cs`. The `AddOpenApi` extension registers one OpenAPI document per API version group; the `UseOpenApiUi` extension mounts both the JSON endpoints and Scalar.
 * **Adding a new endpoint group** requires adding a new `builder.Services.AddOpenApi(groupName, …)` call and a corresponding `options.AddDocument(…)` call in the Scalar configuration.
 * **Version deprecation** must be reflected both in the `[ApiVersion("x.y", Deprecated = true)]` attribute on the controller and in the Scalar `operation.Deprecated` transformer (already wired up generically).

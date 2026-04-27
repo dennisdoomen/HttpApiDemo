@@ -42,8 +42,7 @@ internal static class SwaggerGenerationExtensions
                     document.Info.Contact = new OpenApiContact
                     {
                         Name = "Dennis Doomen",
-                        Email = "mukesh@codewithmukesh.com",
-                        Url = new Uri("https://codewithmukesh.com")
+                        Url = new Uri("https://github.com/dennisdoomen/HttpApiDemo")
                     };
 
                     document.Info.License = new OpenApiLicense
