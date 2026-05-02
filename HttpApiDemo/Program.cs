@@ -56,9 +56,9 @@ public class Program
         // routes (and their version metadata) are only registered after the app is built.
         ApiVersionGroup[] apiVersionGroups =
         [
-            new("public",   new ApiVersion(0, 1), Deprecated: true),
+            new("public",   new ApiVersion(1, 0), Deprecated: true),
             new("public",   new ApiVersion(2, 0)),
-            new("internal", new ApiVersion(1, 0)),
+            new("internal", new ApiVersion(1, 0), Deprecated: true),
             new("internal", new ApiVersion(2, 0)),
             new("private",  new ApiVersion(2, 0)),
         ];
@@ -89,10 +89,9 @@ public class Program
     private static void MapMinimalApiEndpoints(WebApplication app)
     {
         var apiVersionSet = app.NewApiVersionSet()
-            .HasApiVersion(new ApiVersion(0, 1))
             .HasApiVersion(new ApiVersion(1, 0))
             .HasApiVersion(new ApiVersion(2, 0))
-            .HasDeprecatedApiVersion(new ApiVersion(0.1))
+            .HasDeprecatedApiVersion(new ApiVersion(1.0))
             .ReportApiVersions()
             .Build();
 
@@ -141,7 +140,7 @@ public class Program
 
         app.MapGet("/api/v{version:apiVersion}/packagesbyid/", GetDeprecated)
             .WithApiVersionSet(apiVersionSet)
-            .MapToApiVersion(new ApiVersion(0, 1))
+            .MapToApiVersion(new ApiVersion(1, 0))
             .WithGroupName("public")
             .WithName("GetPackagesById")
             .WithSummary("Retrieves package statistics using Minimal API")
