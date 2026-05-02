@@ -11,7 +11,13 @@ namespace HttpApiDemo.Infrastructure;
 
 internal static class SwaggerGenerationExtensions
 {
-    internal static void AddOpenApi(this WebApplicationBuilder builder)
+    /// <summary>
+    /// Registers API versioning, API Explorer, and one OpenAPI document per entry in
+    /// <paramref name="apiVersionGroups"/>. Provide the groups explicitly before calling
+    /// <c>builder.Build()</c> — minimal API endpoint versions are only discoverable after the
+    /// application is built, so dynamic discovery via <c>BuildServiceProvider()</c> does not work.
+    /// </summary>
+    internal static void AddOpenApi(this WebApplicationBuilder builder, IReadOnlyList<ApiVersionGroup> apiVersionGroups)
     {
         builder.Services.AddApiVersioning(options =>
             {
@@ -28,12 +34,9 @@ internal static class SwaggerGenerationExtensions
                 options.SubstituteApiVersionInUrl = true;
             });
 
-        // Build a temporary provider to enumerate the API version groups before the container is fully built.
-        var provider = builder.Services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
-
-        foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
+        foreach (ApiVersionGroup apiVersionGroup in apiVersionGroups)
         {
-            string groupName = description.GroupName;
+            string groupName = apiVersionGroup.Name;
 
             builder.Services.AddOpenApi(groupName, options =>
             {
@@ -41,45 +44,15 @@ internal static class SwaggerGenerationExtensions
                 {
                     var text = new StringBuilder("Demo API");
 
-                    if (description.IsDeprecated)
+                    if (apiVersionGroup.Deprecated)
                     {
                         text.Append(" This API version has been deprecated.");
-                    }
-
-                    if (description.SunsetPolicy is SunsetPolicy policy)
-                    {
-                        if (policy.Date is DateTimeOffset when)
-                        {
-                            text.Append(" The API will be sunset on ")
-                                .Append(when.Date.ToShortDateString())
-                                .Append('.');
-                        }
-
-                        if (policy.HasLinks)
-                        {
-                            text.AppendLine();
-
-                            foreach (LinkHeaderValue link in policy.Links)
-                            {
-                                if (link.Type == "text/html")
-                                {
-                                    text.AppendLine();
-
-                                    if (link.Title.HasValue)
-                                    {
-                                        text.Append(link.Title.Value).Append(": ");
-                                    }
-
-                                    text.Append(link.LinkTarget.OriginalString);
-                                }
-                            }
-                        }
                     }
 
                     document.Info = new OpenApiInfo
                     {
                         Title = "Demo API - " + groupName,
-                        Version = description.ApiVersion.ToString(),
+                        Version = apiVersionGroup.Version.ToString(),
                         Description = text.ToString(),
                         Contact = new OpenApiContact
                         {

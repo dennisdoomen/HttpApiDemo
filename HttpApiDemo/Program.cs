@@ -51,8 +51,20 @@ public class Program
         // Force all URLs to be lowercase.
         builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
+        // Declare all API version groups before Build() so their OpenAPI documents can be registered.
+        // Dynamic discovery via BuildServiceProvider() does not work for minimal API endpoints because
+        // routes (and their version metadata) are only registered after the app is built.
+        ApiVersionGroup[] apiVersionGroups =
+        [
+            new("public",   new ApiVersion(0, 1), Deprecated: true),
+            new("public",   new ApiVersion(2, 0)),
+            new("internal", new ApiVersion(1, 0)),
+            new("internal", new ApiVersion(2, 0)),
+            new("private",  new ApiVersion(2, 0)),
+        ];
+
         // Enable OpenAPI endpoints
-        builder.AddOpenApi();
+        builder.AddOpenApi(apiVersionGroups);
 
         // Make sure enums are serialized to their name and not their number
         builder.Services.Configure<JsonOptions>(options =>
