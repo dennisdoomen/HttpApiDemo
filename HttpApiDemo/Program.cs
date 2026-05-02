@@ -51,9 +51,8 @@ public class Program
         // Force all URLs to be lowercase.
         builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
-        // Enable OpenAPI endspoints
-        builder.AddSwaggerGen();
-        builder.Services.AddEndpointsApiExplorer();
+        // Enable OpenAPI endpoints
+        builder.AddOpenApi();
 
         // Make sure enums are serialized to their name and not their number
         builder.Services.Configure<JsonOptions>(options =>
@@ -66,7 +65,7 @@ public class Program
         // Add Minimal API endpoints alongside controllers
         MapMinimalApiEndpoints(app);
 
-        app.UseSwaggerUi();
+        app.UseOpenApiUi();
         app.UseHttpsRedirection();
         app.UseCors();
         app.UseAuthorization();

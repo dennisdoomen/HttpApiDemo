@@ -1,13 +1,17 @@
+using System.Text;
+using System.Text.Json;
 using Asp.Versioning;
-using Microsoft.Extensions.Options;
+using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace HttpApiDemo.Infrastructure;
 
 internal static class SwaggerGenerationExtensions
 {
-    internal static void AddSwaggerGen(this WebApplicationBuilder builder)
+    internal static void AddOpenApi(this WebApplicationBuilder builder)
     {
         builder.Services.AddApiVersioning(options =>
             {
@@ -24,74 +28,140 @@ internal static class SwaggerGenerationExtensions
                 options.SubstituteApiVersionInUrl = true;
             });
 
-        builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, SwaggerByApiVersionSplitter>();
-        builder.Services.AddSwaggerGen(options =>
+        // Build a temporary provider to enumerate the API version groups before the container is fully built.
+        var provider = builder.Services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
+
+        foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
         {
-            // Add a custom operation filter which sets default values
-            options.OperationFilter<ApplySwashbuckleWorkaroundsFilter>();
+            string groupName = description.GroupName;
 
-            var fileName = typeof(Program).Assembly.GetName().Name + ".xml";
-            var filePath = Path.Combine(AppContext.BaseDirectory, fileName);
+            builder.Services.AddOpenApi(groupName, options =>
+            {
+                options.AddDocumentTransformer((document, _, _) =>
+                {
+                    var text = new StringBuilder("Demo API");
 
-            // Integrate xml comments
-            options.IncludeXmlComments(filePath);
+                    if (description.IsDeprecated)
+                    {
+                        text.Append(" This API version has been deprecated.");
+                    }
 
-            AddSecurityDefinitions(options);
-            AddSecurityRequirements(options);
-        });
+                    if (description.SunsetPolicy is SunsetPolicy policy)
+                    {
+                        if (policy.Date is DateTimeOffset when)
+                        {
+                            text.Append(" The API will be sunset on ")
+                                .Append(when.Date.ToShortDateString())
+                                .Append('.');
+                        }
+
+                        if (policy.HasLinks)
+                        {
+                            text.AppendLine();
+
+                            foreach (LinkHeaderValue link in policy.Links)
+                            {
+                                if (link.Type == "text/html")
+                                {
+                                    text.AppendLine();
+
+                                    if (link.Title.HasValue)
+                                    {
+                                        text.Append(link.Title.Value).Append(": ");
+                                    }
+
+                                    text.Append(link.LinkTarget.OriginalString);
+                                }
+                            }
+                        }
+                    }
+
+                    document.Info = new OpenApiInfo
+                    {
+                        Title = "Demo API - " + groupName,
+                        Version = description.ApiVersion.ToString(),
+                        Description = text.ToString(),
+                        Contact = new OpenApiContact
+                        {
+                            Name = "Dennis Doomen",
+                            Email = "dennis.doomen@avivasolutions.nl"
+                        }
+                    };
+
+                    return Task.CompletedTask;
+                });
+
+                options.AddDocumentTransformer<SecuritySchemeTransformer>();
+
+                options.AddOperationTransformer((operation, context, _) =>
+                {
+                    ApiDescription apiDescription = context.Description;
+                    operation.Deprecated |= apiDescription.IsDeprecated;
+
+                    PopulateParametersWithMissingMetadata(operation, apiDescription);
+
+                    return Task.CompletedTask;
+                });
+
+                // Only include endpoints that belong to this API version group.
+                options.ShouldInclude = api => api.GroupName == groupName;
+            });
+        }
     }
 
-    internal static void UseSwaggerUi(this WebApplication app)
+    internal static void UseOpenApiUi(this WebApplication app)
     {
-        app.UseSwagger(options => { options.RouteTemplate = "api-docs/{version}/open-api-{documentName}.json"; });
+        app.MapOpenApi("/api-docs/open-api-{documentName}.json");
 
         app.UseSwaggerUI(options =>
         {
             var descriptions = app.DescribeApiVersions();
-            var sortedDescriptions = descriptions.OrderBy(description => description.GroupName);
 
-            // build a swagger endpoint for each discovered API version
-            foreach (var description in sortedDescriptions)
+            foreach (ApiVersionDescription description in descriptions.OrderBy(d => d.GroupName))
             {
-                var url = $"/api-docs/v{description.ApiVersion.MajorVersion}/open-api-{description.GroupName}.json";
-                var name = description.GroupName;
-                options.SwaggerEndpoint(url, name);
-                options.RoutePrefix = "api-docs";
-                options.DocumentTitle = "Demo API's";
+                string url = $"/api-docs/open-api-{description.GroupName}.json";
+                options.SwaggerEndpoint(url, description.GroupName);
             }
+
+            options.RoutePrefix = "api-docs";
+            options.DocumentTitle = "Demo API's";
         });
     }
 
-    private static void AddSecurityDefinitions(SwaggerGenOptions options)
+    private static void PopulateParametersWithMissingMetadata(OpenApiOperation operation, ApiDescription apiDescription)
     {
-        // Add an Authorize button to enable bearer token authentication
-        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        if (operation.Parameters is null)
         {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer"
-        });
+            return;
+        }
 
-        // Add an Authorize button to enable basic authentication
-        options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+        foreach (OpenApiParameter? parameter in operation.Parameters)
         {
-            Description = "Basic Authentication using the HTTP Basic scheme. Provide a Base64-encoded 'username:password' " +
-                          "in the Authorization header. Example: \"Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "basic",
-        });
-    }
+            if (parameter is null)
+            {
+                continue;
+            }
 
-    private static void AddSecurityRequirements(SwaggerGenOptions options)
-    {
-        options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
-        {
-            { new OpenApiSecuritySchemeReference("Basic"), [] },
-            { new OpenApiSecuritySchemeReference("Bearer"), [] }
-        });
+            ApiParameterDescription? description = apiDescription.ParameterDescriptions
+                .FirstOrDefault(d => string.Equals(d.Name, parameter.Name, StringComparison.Ordinal));
+
+            if (description is null)
+            {
+                continue;
+            }
+
+            parameter.Description ??= description.ModelMetadata?.Description;
+            parameter.Required |= description.IsRequired;
+
+            if (parameter.Schema is OpenApiSchema schema &&
+                schema.Default == null &&
+                description.DefaultValue != null &&
+                description.DefaultValue is not DBNull &&
+                description.ModelMetadata is ModelMetadata modelMetadata)
+            {
+                schema.Default = JsonSerializer.SerializeToNode(description.DefaultValue, modelMetadata.ModelType);
+            }
+        }
     }
 }
+
