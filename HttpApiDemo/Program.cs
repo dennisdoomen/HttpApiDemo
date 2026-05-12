@@ -27,7 +27,7 @@ public class Program
         builder.Services.AddHealthChecking(builder.Configuration);
 
         // Debugging with app insights is not required.
-        if (!builder.Environment.IsDevelopment() && builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString") != null)
+        if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(builder.Configuration.GetValue<string>("ApplicationInsights:ConnectionString")))
         {
             builder.AddAppInsights(builder.Configuration);
         }
